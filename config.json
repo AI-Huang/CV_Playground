@@ -1,0 +1,6 @@
+{
+  "DATASETS_DIR": "D:\\DeepLearningData\\datasets",
+  "MNIST_DATA_ROOT": "D:\\DeepLearningData\\mnist\\data",
+  "MODEL_DIR": "D:\\DeepLearningData\\pytorch_mnist\\models",
+  "BATCH_SIZE": 64
+}

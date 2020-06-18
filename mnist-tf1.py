@@ -6,45 +6,50 @@
 # @Version : $Id$
 # @Description: MNIST机器学习入门
 
-import numpy
-import matplotlib.pyplot as plt
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
-import platform
+import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
+from tensorflow.examples.tutorials.mnist import input_data
 
 
 def main():
-    print("Python version:")
-    print(platform.python_version())
-    import tensorflow.examples.tutorials.mnist.input_data as input_data
-    mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+    print("Tensorflow version: ", tf.__version__)
+    # Load data
+    mnist = input_data.read_data_sets(
+        train_dir="D:\\DeepLearningData\\datasets\\MNIST\\tf", one_hot=True)
+    # <class 'tensorflow.contrib.learn.python.learn.datasets.base.Datasets'>
+    # print(type(mnist))
+    print(mnist.train.images.shape)  # (55000, 784)
+    print(mnist.train.labels.shape)  # (55000, 10)
+    print(mnist.test.labels.shape)  # (10000, 10)
 
-    # 模型构建
+    # 建立回归模型
     x = tf.placeholder(tf.float32, [None, 784])
     W = tf.Variable(tf.zeros([784, 10]))
     b = tf.Variable(tf.zeros([10]))
+
     y = tf.nn.softmax(tf.matmul(x, W) + b)
-    # 训练方法构建
+
     y_ = tf.placeholder("float", [None, 10])
     cross_entropy = -tf.reduce_sum(y_*tf.log(y))
+
     train_step = tf.train.GradientDescentOptimizer(
         0.01).minimize(cross_entropy)
 
-    init = tf.global_variables_initializer()
+    init = tf.initialize_all_variables()
     sess = tf.Session()
     sess.run(init)
 
-    # 10000个数据，100次迭代一边，1000次只有10个epoch
+    # 训练模型
     for i in range(1000):
+        # print(f"{i}")
         batch_xs, batch_ys = mnist.train.next_batch(100)
         sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
-        if i % 100 == 0:
-            print("epoch %d ends" % (i//100))
 
-    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    print(sess.run(accuracy, feed_dict={
-          x: mnist.test.images, y_: mnist.test.labels}))
+    # 评估模型
 
 
 if __name__ == "__main__":
