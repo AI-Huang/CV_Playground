@@ -27,19 +27,14 @@ BATCH_SIZE = 64
 
 
 def main():
-    print("Load Config...")
+    print("Loading config...")
     with open('./config.json', 'r') as f:
         CONFIG = json.load(f)
     DATASETS_DIR = CONFIG["DATASETS_DIR"]
     MODEL_DIR = CONFIG["MODEL_DIR"]
     makedir_exist_ok(MODEL_DIR)
 
-    # os.chdir(DATA_ROOT)
-    # print("Step 1: Loading data...")
-    # data_train = pd.read_csv("data/train.csv").values
-    # # train = shuffle(train)
-    # data_test = pd.read_csv("data/test.csv").values
-    # num_train = data_train.shape[0]
+    print("Step 1: Preparing data...")
 
     # print("Step 2: Converting data...")
     # X = data_train[:, 1:].reshape(data_train.shape[0], 1, 28, 28)
@@ -74,15 +69,20 @@ def main():
                                               batch_size=BATCH_SIZE,
                                               shuffle=True, num_workers=4)
 
+    print("Step 2: Training config...")
+    num_epoch = 1  # 1000
+    torch.manual_seed(42)
+    use_cuda = torch.cuda.is_available()
+    if use_cuda:
+        print("CUDA GPU available!")
+    device = torch.device("cuda" if use_cuda else "cpu")
+
     print("Step 3: Training phase...")
-    num_epoch = 1  # 50000
     num_train = len(data_train)
     nb_index = 0
     batch_size = BATCH_SIZE
 
-    use_gpu = torch.cuda.is_available()
-
-    model = LeNet5()
+    model = LeNet5().to(device)
     model.train()
 
     criterion = nn.CrossEntropyLoss(size_average=False)
@@ -91,15 +91,18 @@ def main():
 
     for epoch in range(num_epoch):  # a total iteration/epoch
         for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
-            if use_gpu:
+            if use_cuda:
                 X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
             X_batch, y_batch = Variable(X_batch), Variable(y_batch)
+            print(y_batch)
+            print(y_batch.type)
+            input()
             optimizer.zero_grad()
             output = model(X_batch)
             loss = criterion(output, y_batch)
             loss.backward()
             optimizer.step()
-            if batch_idx % 100 == 0:
+            if batch_idx % 100 == 0:  # print every 100 steps
                 print(
                     f"Train epoch: {epoch}, [{batch_idx*batch_size}/{num_train} ({batch_idx*batch_size/num_train*100:.2f}%)].\tLoss: {loss:.6f}")
 

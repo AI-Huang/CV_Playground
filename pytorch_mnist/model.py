@@ -10,10 +10,12 @@ from torch.nn import functional as F
 from torch.autograd import Variable
 
 
+# LeNet5 的解构，是 conv2d 和 FC
+
 class LeNet5(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5, padding=2)  # padding 28*28 to 32 *32
+        self.conv1 = nn.Conv2d(1, 6, 5, padding=2)  # padding 28*28 to 32*32
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16*5*5, 120)
         self.fc2 = nn.Linear(120, 84)
