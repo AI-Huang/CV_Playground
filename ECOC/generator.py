@@ -95,9 +95,9 @@ def test2():
             choices.append(c)
 
 
-def main():
+def _test():
     test()
 
 
 if __name__ == "__main__":
-    main()
+    _test()

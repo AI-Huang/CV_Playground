@@ -1,6 +1,0 @@
-{
-  "DATASETS_DIR": "D:\\DeepLearningData\\datasets",
-  "MNIST_DATA_ROOT": "D:\\DeepLearningData\\mnist\\data",
-  "MODEL_DIR": "D:\\DeepLearningData\\mnist_playground\\models",
-  "BATCH_SIZE": 64
-}

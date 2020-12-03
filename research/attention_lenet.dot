@@ -1,0 +1,18 @@
+digraph attention_layer {
+  Inputs [shape=box, width=2.5];
+  GlobalAveragePooling2D [shape=box, width=2.5];
+  Dense1 [shape=box, label="Dense", width=2.5];
+  ReLU [shape=box, label="ReLU", width=2.5];
+  Dense2 [shape=box, label="Dense", width=2.5];
+  Sigmoid [shape=box, label="Sigmoid", width=2.5];
+  Scale [shape=box, label="Scale", width=2.5];
+
+  Inputs -> GlobalAveragePooling2D ; // [minlen=0.5]
+  GlobalAveragePooling2D -> Dense1 ;
+  Dense1 -> ReLU ;
+  ReLU -> Dense2 ;
+  Dense2 -> Sigmoid ;
+
+  Inputs -> Scale ;
+  Sigmoid -> Scale ;
+}

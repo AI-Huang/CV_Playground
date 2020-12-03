@@ -5,9 +5,16 @@
 # @Link    : http://example.org
 
 
-import os
 from itertools import combinations
-from generator import hamming_distance
+
+
+def hamming_distance(x: int, y: int) -> int:
+    n = x ^ y
+    count = 0
+    while count < n:
+        n &= n-1  # 清除最低位的1
+        count += 1
+    return count
 
 
 def code_set5() -> list:
@@ -86,9 +93,9 @@ def test2():
     pass
 
 
-def main():
+def _test():
     test()
 
 
 if __name__ == "__main__":
-    main()
+    _test()

@@ -1,45 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Date    : Jun-19-20 14:28
-# @Author  : PyTorch
-# @Link    : https://github.com/pytorch/examples/blob/master/mnist/main.py
+# @Date    : Sep-22-20 16:46
+# @Author  : Kelly Hwong (dianhuangkan@gmail.com)
+# @RefLink : https://github.com/pytorch/examples/blob/master/mnist/main.py
+# @RefLink :https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
+# @RefLink : https://pytorch.org/docs/stable/torchvision/models.html
+# @RefLink : https://pytorch.org/hub/pytorch_vision_resnet/
 
-from __future__ import print_function
+import os
 import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms, models
 from torch.optim.lr_scheduler import StepLR
-
-# 这个不知道是什么 Net ，用的 Dropout
-
-
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
-        self.dropout1 = nn.Dropout2d(0.25)
-        self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(9216, 128)
-        self.fc2 = nn.Linear(128, 10)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout1(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.dropout2(x)
-        x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
-        return output
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -78,7 +53,7 @@ def test(model, device, test_loader):
         100. * correct / len(test_loader.dataset)))
 
 
-def main():
+def cmd_args():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -102,39 +77,65 @@ def main():
                         help='For Saving the current Model')
     args = parser.parse_args()
 
+    return args
+
+
+def main():
+    # training arguments
+    args = cmd_args()
+
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])),
-        batch_size=args.test_batch_size, shuffle=True, **kwargs)
+    kwargs = {'batch_size': args.batch_size}
+    if use_cuda:
+        kwargs.update({'num_workers': 1,
+                       'pin_memory': True,
+                       'shuffle': True},
+                      )
 
-    model = Net().to(device)
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    # prepare transform
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    # load mnist data
+    datasets_path = os.path.expanduser("~/.datasets")
+    mnist_train = datasets.MNIST(
+        datasets_path, train=True, download=True, transform=transform)
+    mnist_test = datasets.MNIST(
+        datasets_path, train=False, transform=transform)
+    train_loader = torch.utils.data.DataLoader(mnist_train, **kwargs)
+    test_loader = torch.utils.data.DataLoader(mnist_test, **kwargs)
+
+    # choose model: resnet18
+    resnet18 = models.resnet18(pretrained=True)
+    num_ftrs = resnet18.fc.in_features
+    # Here the size of each output sample is set to 2.
+    # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
+    resnet18.fc = nn.Linear(num_ftrs, 2)
+
+    # modified for MNIST
+    resnet18.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(
+        7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+
+    resnet18 = resnet18.to(device)
+
+    optimizer = optim.Adadelta(resnet18.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch)
-        test(model, device, test_loader)
+        train(args, resnet18, device, train_loader, optimizer, epoch)
+        test(resnet18, device, test_loader)
         scheduler.step()
 
     if args.save_model:
-        torch.save(model.state_dict(), "mnist_cnn.pt")
+        torch.save(resnet18.state_dict(), "mnist_resnet.pt")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
