@@ -54,9 +54,9 @@ def cmd_parser():
     args = parser.parse_args()
 
     # Check inputs
-    if args.model_type not in ["LeNet5", "AttentionLeNet5"]:
+    if args.model_type not in ["LeNet5", "AttentionLeNet5", "LeCunLeNet5"]:
         raise ValueError(
-            f"""args.model_type {args.model_type} NOT in ["LeNet5", "AttentionLeNet5"]""")
+            f"""args.model_type {args.model_type} NOT in ["LeNet5", "AttentionLeNet5", "LeCunLeNet5"]""")
     if args.attention_type not in ["official", "senet"]:
         raise ValueError(
             f"""args.attention_type {args.attention_type} NOT in ["official", "senet"]""")
@@ -70,9 +70,9 @@ def main():
 
     if args.attention:
         if args.attention_type == "senet":
-            model_type = "AttentionLeNet5-SeNet"
+            model_type = "AttentionLeNet5_SeNet"
         elif args.attention_type == "official":
-            model_type = "AttentionLeNet5-Official"
+            model_type = "AttentionLeNet5_Official"
 
     # Config paths
     date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -109,6 +109,10 @@ def main():
     elif model_type == "LeNet5":
         from keras_fn.lenet import LeNet5
         model = LeNet5(input_shape=input_shape, num_classes=num_classes)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    elif model_type == "LeCunLeNet5":
+        from keras_fn.lenet import LeCunLeNet5
+        model = LeCunLeNet5(input_shape=input_shape, num_classes=num_classes)
         optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     elif model_type.startswith("AttentionLeNet5"):
         from keras_fn.attention_lenet import AttentionLeNet5

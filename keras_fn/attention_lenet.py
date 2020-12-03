@@ -41,16 +41,18 @@ def AttentionLeNet5(input_shape, num_classes=None, attention=None):
 
     model_head = Sequential()
     model_head.add(input_)
-    model_head.add(Conv2D(filters=6, kernel_size=(5, 5), padding="valid"))
+    model_head.add(Conv2D(filters=6, kernel_size=(5, 5),
+                          padding="valid", activation="relu"))
     model_head.add(MaxPool2D(strides=2))
-    model_head.add(Conv2D(filters=16, kernel_size=(5, 5), padding="valid"))
+    model_head.add(Conv2D(filters=16, kernel_size=(5, 5),
+                          padding="valid", activation="relu"))
     model_head.add(MaxPool2D(strides=2))
 
     model_top = Sequential()
     model_top.add(Flatten())
-    model_top.add(Dense(120))
-    model_top.add(Dense(84))
-    model_top.add(Dense(num_classes, activation="softmax"))
+    model_top.add(Dense(120, activation="relu"))
+    model_top.add(Dense(84, activation="relu"))
+    model_top.add(Dense(10, activation='softmax'))
 
     # Add Attention afer Flatten Layer
     if attention is not None:
