@@ -55,10 +55,9 @@ def AttentionLeNet5(input_shape, num_classes=None, attention=None):
     model_top.add(Dense(10, activation='softmax'))
 
     # Add Attention afer Flatten Layer
-    if attention is not None:
-        if not attention in available_attention:
-            raise ValueError(
-                f"""attention argument must be in ["official", "senet"]""")
+    if not attention in available_attention:
+        raise ValueError(
+            f"""attention argument must be in ["official", "senet"]""")
     if attention == "official":
         x_attention = Attention(model_head.output)
     elif attention == "senet":
