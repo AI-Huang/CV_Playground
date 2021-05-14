@@ -103,7 +103,7 @@ def main():
         transforms.Normalize((0.1307,), (0.3081,))
     ])
 
-    # load mnist data
+    # Load mnist data
     datasets_path = os.path.expanduser("~/.datasets")
     mnist_train = datasets.MNIST(
         datasets_path, train=True, download=True, transform=transform)

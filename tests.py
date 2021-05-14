@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Date    : Nov-27-20 21:46
+# @Date    : Feb-05-21 20:56
 # @Author  : Kelly Hwong (dianhuangkan@gmail.com)
 # @Link    : http://example.org
 
-"""Model configuration functions
-"""
-
-
-def get_metric(parameter_list):
-    """
-    docstring
-    """
-    pass
+import os
+from models.keras_fn import get_metric
 
 
 def main():
-    pass
+    get_metric()
 
 
 if __name__ == "__main__":

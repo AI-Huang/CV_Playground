@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Date    : Apr-17-20 02:45
-# @Author  : Your Name (you@example.org)
-# @Link    : http://example.org
-
+# @Author  : Kelly Hwong (you@example.org)
+# @Link    : https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 
 import os
 import json
 import pandas as pd
 import numpy as np
+import csv
 
 import torch
 from torch import nn, optim
@@ -20,86 +20,53 @@ from torchvision import datasets, transforms
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 
-from pytorch_mnist.model import LeNet5
-from pytorch_mnist.utils import makedir_exist_ok
-
-from ECOC.encode import code_set5
-
-# parameters
-BATCH_SIZE = 64
-
-print("Loading config...")
-with open('./config.json', 'r') as f:
-    CONFIG = json.load(f)
-DATASETS_DIR = CONFIG["DATASETS_DIR"]
-MODEL_DIR = CONFIG["MODEL_DIR"]
-makedir_exist_ok(MODEL_DIR)
+from torch_fn.lenet import LeNet5
+from utils.dir_utils import makedir_exist_ok
 
 
-def train(data_train):
-    train_loader = torch.utils.data.DataLoader(dataset=data_train,
-                                               batch_size=BATCH_SIZE,
-                                               shuffle=True, num_workers=4)
+def train(model, dataset, epochs=50, batch_size=32, use_cuda=False, seed=None):
+    """training process, use a model to train data
+    Inputs:
+        model: model.
+        dataset: dataset to be trained.
+        epochs: training epochs.
+        seed:
+    """
+    if seed:  # set RNG seed
+        torch.manual_seed(seed)
 
-    # Training config
-    num_epoch = 1  # 1000
-    torch.manual_seed(42)
-    use_cuda = torch.cuda.is_available()
-    if use_cuda:
-        print("CUDA GPU available!")
-    device = torch.device("cuda" if use_cuda else "cpu")
-
-    # Training phase
-    num_classes = 10
-    num_train = len(data_train)
-    batch_size = BATCH_SIZE
-
-    N = 5  # encode length
-    code_set = code_set5()  # in CPU, dict: int->int
-
-    model = LeNet5(output_dim=N).to(device)
     model.train()
 
-    # criterion = nn.CrossEntropyLoss(size_average=False)
-    criterion = nn.BCELoss(size_average=False)
+    train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                               batch_size=batch_size,
+                                               shuffle=True, num_workers=4)
+    num_train = len(dataset)
+
+    criterion = nn.CrossEntropyLoss(size_average=False)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.99))
 
-    for epoch in range(num_epoch):  # a total iteration/epoch
+    headers = ["epoch", 'loss']
+    f = open("./logs/log_torch_mnist.csv", 'w', newline='')
+    f_csv = csv.writer(f)
+    f_csv.writerow(headers)
+
+    for epoch in range(epochs):  # a total iteration/epoch
         for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
-            if use_cuda:
+            if use_cuda:  # config device
                 X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
-            X_batch, y_batch = Variable(X_batch), Variable(y_batch)
-            # encode label
-            y_batch = torch.Tensor([code_set[int(_)] for _ in y_batch])
-            b = torch.zeros(y_batch.size()[0], N)
-            for i, _ in enumerate(y_batch.clone()):
-                bits = torch.zeros(N)
-                for j in range(N):
-                    if _ % 2 == 1:
-                        bits[j] = 1
-                    _ //= 2  # floor div
-                b[i] = bits.clone()
-            y_batch = b
-            if use_cuda:
-                y_batch = y_batch.cuda()  # to GPU again
             optimizer.zero_grad()
             output = model(X_batch)
-            m = nn.Softmax()
-            pred = m(output)
-            loss = criterion(pred, y_batch)
+            loss = criterion(output, y_batch)
             loss.backward()
             optimizer.step()
             if batch_idx % 100 == 0:  # print every 100 steps
                 print(
                     f"Train epoch: {epoch}, [{batch_idx*batch_size}/{num_train} ({batch_idx*batch_size/num_train*100:.2f}%)].\tLoss: {loss:.6f}")
-
-    model_path = os.path.join(MODEL_DIR, "test.pth")
-    torch.save(model.state_dict(), model_path)
-    print(f"Model saved to {model_path}.")
+                f_csv.writerow([epoch, float(loss)])
 
 
-def test(data_test):
+def test(data_test, use_cuda=False):
     test_loader = torch.utils.data.DataLoader(dataset=data_test,
                                               batch_size=BATCH_SIZE,
                                               shuffle=True, num_workers=4)
@@ -107,7 +74,7 @@ def test(data_test):
     print("Step 2: Testing config...")
     num_epoch = 1  # 1000
     torch.manual_seed(42)
-    use_cuda = torch.cuda.is_available()
+
     if use_cuda:
         print("CUDA GPU available!")
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -143,15 +110,7 @@ def test(data_test):
 
 
 def main():
-
-    # manually load data
-    # print("Step 2: Converting data...")
-    # X = data_train[:, 1:].reshape(data_train.shape[0], 1, 28, 28)
-    # X = X.astype(float)
-    # y = data_train[:, 0]
-    # y = y.astype(int)
-
-    print("Step 1: Preparing data...")
+    # Preparing data
     data_transforms = {
         'train': transforms.Compose([
             transforms.ToTensor()
@@ -164,6 +123,7 @@ def main():
         transforms.ToTensor()
     ])
 
+    DATASETS_DIR = os.path.expanduser(os.path.join("~", ".datasets"))
     data_train_no_transform = datasets.MNIST(
         root=DATASETS_DIR, train=True, download=True)
     data_train = datasets.MNIST(
@@ -171,7 +131,31 @@ def main():
     data_test = datasets.MNIST(
         root=DATASETS_DIR, train=False, transform=transform, download=True)
 
-    train(data_train)
+    # reproducibility
+    seed = 42  # seed set to 42
+
+    # Preparing model
+    use_cuda = torch.cuda.is_available()  # CUDA
+    if use_cuda:
+        print("CUDA GPU available! Use GPU.")
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    print(f"Set random seed to {seed} for model.")
+    torch.manual_seed(seed)
+    model = LeNet5().to(device)
+
+    import time
+    start = time.process_time()
+    # print(f"Set random seed to {seed} for training.")
+    train(model, dataset=data_train, epochs=1,
+          batch_size=32, use_cuda=use_cuda, seed=None)  # do not refresh the seed for training
+    elapsed = time.process_time() - start
+    print(f"Time used: {elapsed}s")
+
+    model_path = os.path.join(MODEL_DIR, "test.pth")
+    torch.save(model.state_dict(), model_path)
+    print(f"Model saved to {model_path}.")
+
     # test(data_test)
 
 

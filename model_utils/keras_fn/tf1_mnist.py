@@ -4,7 +4,11 @@
 # @Author  : Your Name (you@example.org)
 # @Link    : https://wiki.jikexueyuan.com/project/tensorflow-zh/tutorials/mnist_beginners.html
 # @Version : $Id$
-# @Description: MNIST机器学习入门
+# @Description:
+
+"""tf1_mnist.py
+MNIST 机器学习入门
+"""
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
