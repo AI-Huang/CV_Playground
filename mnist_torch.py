@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Date    : Sep-22-20 20:46
-# @Author  : PyTorch
+# @Author  : Kan HUANG (kan.huang@connect.ust.hk)
 # @RefLink : https://github.com/pytorch/examples/blob/master/mnist/main.py
 
 
@@ -30,12 +30,16 @@ def cmd_args():
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
 
+    parser.add_argument('--do-train', action='store_true', default=True)
+    parser.add_argument('--do-eval', action='store_true', default=True)
+
     parser.add_argument('--loss', type=str, default='cross_entropy')
+    parser.add_argument('--optimizer', type=str, default='sgd')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 50)')
-    parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
-                        help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M')
+    parser.add_argument('--gamma', type=float, default=0.7,
                         help='Learning rate step gamma (default: 0.7)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
@@ -46,7 +50,7 @@ def cmd_args():
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
 
-    parser.add_argument('--save-model', action='store_true', default=False,
+    parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
     args = parser.parse_args()
 
@@ -99,7 +103,7 @@ def main():
     args = cmd_args()
     date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
     output_dir = os.path.join(
-        "output", f"{args.model_name}_{args.dataset_name}_{date_time}")
+        "output", f"{args.model_name}_{args.dataset_name}_{args.optimizer}_{date_time}")
     os.makedirs(output_dir, exist_ok=True)
 
     # Record config
@@ -115,6 +119,7 @@ def main():
     args.device = device
     kwargs = {'batch_size': args.batch_size}
     if use_cuda:
+        torch.cuda.manual_seed(args.seed)
         kwargs.update({'num_workers': 1,
                        'pin_memory': True,
                        'shuffle': True},
@@ -141,21 +146,31 @@ def main():
     model = LeNet5(output_dim=10).to(device)
     if args.loss == "cross_entropy":
         criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
-    scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    scheduler = None
+    if args.optimizer == "sgd":
+        optimizer = optim.SGD(model.parameters(),
+                              lr=args.lr, momentum=args.momentum)
+    else:
+        # TODO, other optimizers such as Adam
+        StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in tqdm(range(args.epochs)):
-        train(model, train_loader, criterion, optimizer, epoch, args)
-        test_result = test(model, test_loader, args)
-        with open(os.path.join(output_dir, 'test.csv'), "a") as f:
-            f.write(",".join(
-                [str(_) for _ in [
-                    epoch, test_result["test_loss"], test_result["test_accuracy"]
-                ]]
-            ) + '\n')
-        scheduler.step()
+        if args.do_train:
+            train(model, train_loader, criterion, optimizer, epoch, args)
+        if args.do_eval:
+            test_result = test(model, test_loader, args)
+            with open(os.path.join(output_dir, 'test.csv'), "a") as f:
+                f.write(",".join(
+                    [str(_) for _ in [
+                        epoch, test_result["test_loss"], test_result["test_accuracy"]
+                    ]]
+                ) + '\n')
+
+        if scheduler:
+            scheduler.step()
 
     if args.save_model:
-        torch.save(model.state_dict(), f"{args.model_name}.pt")
+        torch.save(model.state_dict(),
+                   os.path.join(output_dir, f"{args.model_name}.pt"))
 
 
 if __name__ == '__main__':

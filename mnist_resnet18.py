@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Date    : Sep-22-20 16:46
-# @Author  : Kelly Hwong (dianhuangkan@gmail.com)
+# @Author  : Kan HUANG (kanhuang@astri.org)
 # @RefLink : https://github.com/pytorch/examples/blob/master/mnist/main.py
 # @RefLink :https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 # @RefLink : https://pytorch.org/docs/stable/torchvision/models.html
