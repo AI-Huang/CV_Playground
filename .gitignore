@@ -1,6 +1,6 @@
 # data and logs
 data/
-logs/
+output/
 
 # vscode
 .vscode/

@@ -17,7 +17,7 @@ import argparse
 from datetime import datetime
 import numpy as np
 import tensorflow as tf
-from utils.load_data import load_data
+from data.tf_fn.load_data import load_data
 from model_utils.keras_fn import create_model, create_optimizer
 from model_utils.keras_fn.lr_schedules import polynomial_schedule
 

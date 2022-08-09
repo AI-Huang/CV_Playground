@@ -7,7 +7,8 @@
 """attention_visualization
 Visualize the Attention layer.
 """
-import os
+import tensorflow as tf
+import numpy as np
 
 
 def main():

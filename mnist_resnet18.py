@@ -47,10 +47,12 @@ def test(model, device, test_loader):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
+    accuracy = 100. * correct / len(test_loader.dataset)
 
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+    print(
+        '\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+            test_loss, correct, len(test_loader.dataset), accuracy)
+    )
 
 
 def cmd_args():
@@ -118,11 +120,9 @@ def main():
     # Here the size of each output sample is set to 2.
     # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
     resnet18.fc = nn.Linear(num_ftrs, 2)
-
     # modified for MNIST
     resnet18.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(
         7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-
     resnet18 = resnet18.to(device)
 
     optimizer = optim.Adadelta(resnet18.parameters(), lr=args.lr)
