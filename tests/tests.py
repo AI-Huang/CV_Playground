@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Date    : Feb-05-21 20:56
-# @Author  : Kelly Hwong (dianhuangkan@gmail.com)
-# @Link    : http://example.org
+# @Author  : Kelley Kan HUANG (kan.huang@connect.ust.hk)
 
 import os
 from models.keras_fn import get_metric

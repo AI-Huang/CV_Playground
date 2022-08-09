@@ -153,6 +153,7 @@ def main():
     else:
         # TODO, other optimizers such as Adam
         StepLR(optimizer, step_size=1, gamma=args.gamma)
+        
     for epoch in tqdm(range(args.epochs)):
         if args.do_train:
             train(model, train_loader, criterion, optimizer, epoch, args)
