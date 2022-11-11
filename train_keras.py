@@ -51,6 +51,10 @@ def cmd_parser():
                         action='store', default="LeNet5", help="""model_name, one of ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152", "LeNet5", "AttentionLeNet5"].""")
     parser.add_argument('--batch_size', type=int, dest='batch_size',
                         action='store', default=32, help=""".""")
+    parser.add_argument('--seed', type=int, dest='seed',
+                        action='store', default=42, help=""".""")
+    parser.add_argument('--validation_split', type=float, dest='validation_split',
+                        action='store', default=0.2, help=""".""")
     parser.add_argument('--epochs', type=int, dest='epochs',
                         action='store', default=100, help=""".""")
 
@@ -120,10 +124,10 @@ def main():
     # Prepare data
     cifar10_sequence_train, cifar10_sequence_val, cifar10_sequence_test = \
         load_cifar10_sequence(to_categorical=True,
-                              batch_size=128,
+                              batch_size=batch_size,
                               shuffle=True,
-                              seed=42,
-                              validation_split=0.1)
+                              seed=args.seed,
+                              validation_split=args.validation_split)
 
     # Setup model
     batch_x, batch_y = cifar10_sequence_train[0]
@@ -165,8 +169,8 @@ def main():
         log_dir, "training.log.csv"), append=True)
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir, histogram_freq=1, update_freq="batch")
-    # without .h5 extension
-    ckpt_filename = "%s-epoch-{epoch:03d}-categorical_accuracy-{categorical_accuracy:.4f}" % model_name
+
+    ckpt_filename = "%s-epoch-{epoch:03d}-categorical_accuracy-{categorical_accuracy:.4f}.h5" % model_name
     ckpt_filepath = os.path.join(ckpt_dir, ckpt_filename)
     checkpoint_callback = ModelCheckpoint(
         filepath=ckpt_filepath,
