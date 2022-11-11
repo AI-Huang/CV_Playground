@@ -2,9 +2,16 @@
 
 Playground for MNIST dataset.
 
-使用不同框架，应用各种神经网络架构，在 MNIST 数据集上训练。
+使用不同框架，应用各种神经网络架构，在 MNIST, CIFAR-10, CIFAR-100 等数据集上训练。
 
 ## Requirements and Dependencies
+
+Tested on:
+
+| Environments | Details                    |
+| ------------ | -------------------------- |
+| TensorFlow   | Python=3.7, TensorFlow=2.3 |
+| PyTorch      | Python=3.7, torch=TBA      |
 
 Model architectures are available in my `models` repository here: https://github.com/AI-Huang/models.
 
