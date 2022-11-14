@@ -129,6 +129,9 @@ def main():
                               seed=args.seed,
                               validation_split=args.validation_split)
 
+    # Set random seed
+    tf.keras.utils.set_random_seed(args.seed)
+
     # Setup model
     batch_x, batch_y = cifar10_sequence_train[0]
     input_shape = batch_x.shape[1:]
