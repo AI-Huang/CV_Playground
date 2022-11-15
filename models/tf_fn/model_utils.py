@@ -109,21 +109,28 @@ def create_model(model_name, **kwargs):
 
 
 def create_optimizer(optimizer_name="Adam", **kwargs):
-    # Default values
-    learning_rate = 0.001
-
-    if "learning_rate" in kwargs:
-        learning_rate = kwargs["learning_rate"]
 
     if optimizer_name == "Adam":
-        optimizer = tf.keras.optimizers.Adam()
+        # Default values
+        learning_rate = kwargs["learning_rate"] if "learning_rate" in kwargs else 0.001
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+
     elif optimizer_name == "SGD":
+        learning_rate = kwargs["learning_rate"] if "learning_rate" in kwargs else 0.0
+        momentum = kwargs["momentum"] if "momentum" in kwargs else 0.0
+        optimizer = tf.keras.optimizers.SGD(
+            learning_rate=learning_rate,
+            momentum=momentum,
+            nesterov=False, name='SGD')
+
+    elif optimizer_name == "SGDW":
         learning_rate = kwargs["learning_rate"] if "learning_rate" in kwargs else 0.001
         weight_decay = kwargs["weight_decay"] if "weight_decay" in kwargs else 0.0001
         momentum = kwargs["momentum"] if "momentum" in kwargs else 0.0
         optimizer = tfa.optimizers.SGDW(learning_rate=learning_rate,
                                         weight_decay=weight_decay,
                                         momentum=momentum)
+
     else:
         raise Exception("Unknown optimizer: " + optimizer_name)
 
