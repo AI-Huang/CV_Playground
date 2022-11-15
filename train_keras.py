@@ -48,11 +48,11 @@ def cmd_parser():
     parser.add_argument('--num_classes', type=int, dest='num_classes',
                         action='store', default=10, help=""".""")
     parser.add_argument('--model_name', type=str, dest='model_name',
-                        action='store', default="LeNet5", help="""model_name, one of ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152", "LeNet5", "AttentionLeNet5"].""")
+                        action='store', default="NoModel", help="""model_name, one of ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152", "LeNet5", "AttentionLeNet5"].""")
     parser.add_argument('--batch_size', type=int, dest='batch_size',
                         action='store', default=32, help=""".""")
-    parser.add_argument('--seed', type=int, dest='seed',
-                        action='store', default=42, help=""".""")
+    parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
+                        help='random seed (default: numpy.random.randint(10000) )')
     parser.add_argument('--validation_split', type=float, dest='validation_split',
                         action='store', default=0.2, help=""".""")
     parser.add_argument('--epochs', type=int, dest='epochs',
@@ -85,16 +85,20 @@ def cmd_parser():
 
 
 def main():
-    args = cmd_parser()
     # Training settings
+    args = cmd_parser()
+    model_name = args.model_name
+    dataset = args.dataset
     batch_size = args.batch_size
     epochs = args.epochs
+    learning_rate = args.learning_rate
+    optimizer_name = args.optimizer_name
 
-    model_name = args.model_name
     # Config paths
     date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
     prefix = os.path.join("~", "Documents", "DeepLearningData", args.dataset)
-    subfix = os.path.join(model_name, date_time)
+    subfix = os.path.join(
+        model_name, dataset, f"b{batch_size}-e{epochs}-lr{learning_rate}", optimizer_name, date_time)
     ckpt_dir = os.path.expanduser(os.path.join(prefix, subfix, "ckpts"))
     log_dir = os.path.expanduser(os.path.join(prefix, subfix, "logs"))
     os.makedirs(ckpt_dir, exist_ok=True)
@@ -130,7 +134,13 @@ def main():
                               validation_split=args.validation_split)
 
     # Set random seed
-    tf.keras.utils.set_random_seed(args.seed)
+    try:
+        tf.keras.utils.set_random_seed(args.seed)
+    except:
+        import random
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        tf.random.set_seed(args.seed)
 
     # Setup model
     batch_x, batch_y = cifar10_sequence_train[0]
