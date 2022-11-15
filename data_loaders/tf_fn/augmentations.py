@@ -7,15 +7,14 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 minor_version = int(tf.__version__.split('.')[1])
-if minor_version <= 3:
-    # TensorFlow v2.3
+try:
     from tensorflow.keras.layers.experimental.preprocessing import RandomFlip, RandomCrop
-else:
+except:
     from tensorflow.keras.layers import RandomFlip, RandomCrop
 
 
 def to_tensor_img(x):
-    return x / 255
+    return x / 255.0
 
 
 def to_tensor():
