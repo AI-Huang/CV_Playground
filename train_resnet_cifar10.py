@@ -19,9 +19,8 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
-import tensorflow_addons as tfa
 from data_loaders.tf_fn.load_cifar10 import load_cifar10_sequence
-from models.tf_fn.model_utils import create_model, create_optimizer
+from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
 from models.tf_fn.optim_utils import cifar10_schedule
 
 
@@ -50,6 +49,10 @@ def cmd_parser():
                         action='store', default=10, help=""".""")
     parser.add_argument('--model_name', type=str, dest='model_name',
                         action='store', default="NoModel", help="""model_name, one of ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152", "LeNet5", "AttentionLeNet5"].""")
+    parser.add_argument('--n', type=int, dest='n',
+                        action='store', default=3, help=""".""")
+    parser.add_argument('--version', type=int, dest='version',
+                        action='store', default=1, help=""".""")
     parser.add_argument('--batch_size', type=int, dest='batch_size',
                         action='store', default=32, help=""".""")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
@@ -97,19 +100,6 @@ def main():
     epochs = args.epochs
     learning_rate = args.learning_rate
     optimizer_name = args.optimizer_name
-
-    # Config paths
-    date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-    prefix = os.path.join("~", "Documents", "DeepLearningData")
-    subfix = os.path.join(
-        dataset, model_name, f"b{batch_size}-e{epochs}-lr{learning_rate}", optimizer_name, date_time)
-    ckpt_dir = os.path.expanduser(os.path.join(prefix, subfix, "ckpts"))
-    log_dir = os.path.expanduser(os.path.join(prefix, subfix, "logs"))
-    os.makedirs(ckpt_dir, exist_ok=True)
-    os.makedirs(log_dir, exist_ok=True)
-    with open(os.path.join(log_dir, "config.json"), 'w', encoding='utf8') as json_file:
-        json.dump(vars(args), json_file, ensure_ascii=False)
-
     lr_schedule = args.lr_schedule
     if lr_schedule == "cifar10_schedule":
         lr_schedule = partial(cifar10_schedule, base_lr=learning_rate)
@@ -119,9 +109,6 @@ def main():
                      "ResNet50", "ResNet101", "ResNet152"]
     available_models = ["LeNet5", "AttentionLeNet5",
                         "LeCunLeNet5"] + resnet_family
-    if args.model_name not in available_models:
-        raise ValueError(
-            f"""args.model_name {args.model_name} NOT in {available_models}""")
 
     if args.attention:
         if args.attention_type == "senet":
@@ -151,6 +138,9 @@ def main():
     batch_x, batch_y = cifar10_sequence_train[0]
     input_shape = batch_x.shape[1:]  # Input image dimensions.
     if args.dataset == "mnist":
+        if args.model_name not in available_models:
+            raise ValueError(
+                f"""args.model_name {args.model_name} NOT in {available_models}""")
         # Preprocessing and choose optimizer for ResNet18
         if model_name in resnet_family:
             model_core = create_model(
@@ -162,9 +152,36 @@ def main():
             x = tf.pad(x, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]])
             x = model_core(x)
             model = tf.keras.Model(inputs=[input_], outputs=[x])
+    elif args.dataset == "cifar10":
+        # Model version
+        # Orig paper: version = 1 (ResNet v1), Improved ResNet: version = 2 (ResNet v2)
+        version = 1
+        n = args.n
+        # Computed depth from supplied model parameter n
+        if version == 1:
+            depth = n * 6 + 2
+        elif version == 2:
+            depth = n * 9 + 2
+        args.depth = depth
+        model = create_model_cifar10(
+            input_shape=input_shape, depth=args.depth, version=args.version)
+        # Model name, depth and version
+        model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
     else:
         model = create_model(
             model_name, input_shape=input_shape, num_classes=args.num_classes)
+
+    # Config paths
+    date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+    prefix = os.path.join("~", "Documents", "DeepLearningData")
+    subfix = os.path.join(
+        dataset, model_name, f"b{batch_size}-e{epochs}-lr{learning_rate}", optimizer_name, date_time)
+    ckpt_dir = os.path.expanduser(os.path.join(prefix, subfix, "ckpts"))
+    log_dir = os.path.expanduser(os.path.join(prefix, subfix, "logs"))
+    os.makedirs(ckpt_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
+    with open(os.path.join(log_dir, "config.json"), 'w', encoding='utf8') as json_file:
+        json.dump(vars(args), json_file, ensure_ascii=False)
 
     optimizer = create_optimizer(args.optimizer_name,
                                  learning_rate=args.learning_rate,

@@ -35,8 +35,8 @@ def cifar10_schedule(epoch, base_lr=0.1):
     return lr
 
 
-def polynomial_schedule(epoch):
-    """Polynomial learning rate schedule
+def keras_lr_schedule(epoch):
+    """Keras's polynomial learning rate schedule
 
     Learning rate is scheduled to be reduced after 80, 120, 160, 180 epochs.
     Called automatically every epoch as part of callbacks during training.

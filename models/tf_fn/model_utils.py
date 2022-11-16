@@ -14,9 +14,9 @@ Requirements:
 
 import tensorflow as tf
 import tensorflow_addons as tfa
-# from models.keras_fn.lenet import LeNet5, LeCunLeNet5
-# Fault ResNet
-# from models.keras_fn.fault_resnet import resnet_v1, resnet_v2, lr_schedule
+# from models.tf_fn.lenet import LeNet5, LeCunLeNet5
+# ResNet for CIFAR-10
+from models.tf_fn.resnet_cifar10 import resnet_v1, resnet_v2
 
 
 def create_model(model_name, **kwargs):
@@ -108,6 +108,14 @@ def create_model(model_name, **kwargs):
     return model
 
 
+def create_model_cifar10(input_shape, depth, version=1):
+    if version == 2:
+        model = resnet_v2(input_shape=input_shape, depth=depth)
+    else:
+        model = resnet_v1(input_shape=input_shape, depth=depth)
+    return model
+
+
 def create_optimizer(optimizer_name="Adam", **kwargs):
 
     if optimizer_name == "Adam":
@@ -135,17 +143,3 @@ def create_optimizer(optimizer_name="Adam", **kwargs):
         raise Exception("Unknown optimizer: " + optimizer_name)
 
     return optimizer
-
-
-def set_metrics():
-    """set_metrics, 
-    """
-    pass
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()
