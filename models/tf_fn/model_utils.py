@@ -113,7 +113,7 @@ def create_optimizer(optimizer_name="Adam", **kwargs):
     if optimizer_name == "Adam":
         # Default values
         learning_rate = kwargs["learning_rate"] if "learning_rate" in kwargs else 0.001
-        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
     elif optimizer_name == "SGD":
         learning_rate = kwargs["learning_rate"] if "learning_rate" in kwargs else 0.0

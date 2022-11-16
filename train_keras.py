@@ -15,6 +15,7 @@ import os
 import json
 import argparse
 from datetime import datetime
+from functools import partial
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
@@ -55,9 +56,12 @@ def cmd_parser():
                         help='random seed (default: numpy.random.randint(10000) )')
     parser.add_argument('--validation_split', type=float, dest='validation_split',
                         action='store', default=0.2, help=""".""")
+    parser.add_argument('--norm', action='store_true',
+                        help="Whether to normalize the dataset, defaults to True.")
+
+    # Optimization parameters
     parser.add_argument('--epochs', type=int, dest='epochs',
                         action='store', default=100, help=""".""")
-
     parser.add_argument('--optimizer_name', type=str, dest='optimizer_name',
                         action='store', default="SGD", help=""".""")
     parser.add_argument('--learning_rate', type=float, dest='learning_rate',
@@ -96,9 +100,9 @@ def main():
 
     # Config paths
     date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-    prefix = os.path.join("~", "Documents", "DeepLearningData", args.dataset)
+    prefix = os.path.join("~", "Documents", "DeepLearningData")
     subfix = os.path.join(
-        model_name, dataset, f"b{batch_size}-e{epochs}-lr{learning_rate}", optimizer_name, date_time)
+        dataset, model_name, f"b{batch_size}-e{epochs}-lr{learning_rate}", optimizer_name, date_time)
     ckpt_dir = os.path.expanduser(os.path.join(prefix, subfix, "ckpts"))
     log_dir = os.path.expanduser(os.path.join(prefix, subfix, "logs"))
     os.makedirs(ckpt_dir, exist_ok=True)
@@ -108,7 +112,7 @@ def main():
 
     lr_schedule = args.lr_schedule
     if lr_schedule == "cifar10_schedule":
-        lr_schedule = cifar10_schedule
+        lr_schedule = partial(cifar10_schedule, base_lr=learning_rate)
 
     # Check inputs
     resnet_family = ["ResNet18", "ResNet34",
@@ -131,7 +135,8 @@ def main():
                               batch_size=batch_size,
                               shuffle=True,
                               seed=args.seed,
-                              validation_split=args.validation_split)
+                              validation_split=args.validation_split,
+                              norm=args.norm)
 
     # Set random seed
     try:

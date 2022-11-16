@@ -6,7 +6,7 @@
 import tensorflow as tf
 
 
-def cifar10_schedule(epoch):
+def cifar10_schedule(epoch, base_lr=0.1):
     """Learning rate schedule for training ResNet on CIFAR-10
 
     Learning rate is scheduled to be reduced after 80, 120, 160, 180 epochs.
@@ -18,7 +18,6 @@ def cifar10_schedule(epoch):
     # Returns
         lr (float32): learning rate
     """
-    base_lr = 0.1
 
     lr = base_lr
     if 92 <= epoch+1 < 137:
@@ -64,11 +63,3 @@ def polynomial_schedule(epoch):
     tf.summary.scalar('learning rate', data=lr, step=epoch)
 
     return lr
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()

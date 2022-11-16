@@ -3,9 +3,22 @@
 # @Date    : Nov-11-22 15:02
 # @Author  : Kan HUANG (kan.huang@connect.ust.hk)
 
+import numpy as np
 import tensorflow as tf
 from data_loaders.tf_fn.augmentations import to_tensor, pad_and_crop
 from data_loaders.tf_fn.data_sequences import CIFAR10Sequence
+
+
+def color_normalize(train_images, test_images):
+    mean = [np.mean(train_images[:, :, :, i])
+            for i in range(3)]  # [125.307, 122.95, 113.865]
+    std = [np.std(train_images[:, :, :, i])
+           for i in range(3)]  # [62.9932, 62.0887, 66.7048]
+    for i in range(3):
+        train_images[:, :, :, i] = (
+            train_images[:, :, :, i] - mean[i]) / std[i]
+        test_images[:, :, :, i] = (test_images[:, :, :, i] - mean[i]) / std[i]
+    return train_images, test_images
 
 
 def load_cifar10_sequence(**kwargs):
@@ -17,12 +30,16 @@ def load_cifar10_sequence(**kwargs):
     norm = kwargs["norm"] if "norm" in kwargs else False
 
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+    x_train, x_test = color_normalize(x_train, x_test)
+
     to_categorical = True
     if to_categorical:
         y_train = tf.keras.utils.to_categorical(y_train)
         y_test = tf.keras.utils.to_categorical(y_test)
 
-    transforms = [to_tensor, pad_and_crop]
+    # transforms = [to_tensor, pad_and_crop]
+    transforms = [pad_and_crop]
+
     if norm:
         if float(tf.__version__[:3]) <= 2.3:
             raise EnvironmentError(
