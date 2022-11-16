@@ -21,7 +21,7 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
-from models.tf_fn.optim_utils import cifar10_schedule
+from models.tf_fn.optim_utils import cifar10_scheduler
 
 
 def cmd_parser():
@@ -101,8 +101,8 @@ def main():
     learning_rate = args.learning_rate
     optimizer_name = args.optimizer_name
     lr_schedule = args.lr_schedule
-    if lr_schedule == "cifar10_schedule":
-        lr_schedule = partial(cifar10_schedule, base_lr=learning_rate)
+    if lr_schedule == "cifar10_scheduler":
+        lr_schedule_fn = cifar10_scheduler
 
     # Check inputs
     resnet_family = ["ResNet18", "ResNet34",
@@ -187,7 +187,7 @@ def main():
                                  learning_rate=args.learning_rate,
                                  weight_decay=args.weight_decay,
                                  momentum=args.momentum)
-    lr_scheduler = LearningRateScheduler(lr_schedule, verbose=1)
+    lr_scheduler = LearningRateScheduler(lr_schedule_fn, verbose=1)
 
     loss = tf.keras.losses.CategoricalCrossentropy(
         name="categorical_crossentropy")
