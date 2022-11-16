@@ -19,7 +19,7 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
-from data_loaders.tf_fn.load_cifar10 import load_cifar10_sequence
+from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
 from models.tf_fn.optim_utils import cifar10_schedule
 
@@ -217,14 +217,26 @@ def main():
     callbacks = [csv_logger, lr_scheduler,
                  checkpoint_callback, tensorboard_callback]
 
-    # Fit model
-    model.fit(
-        cifar10_sequence_train,
-        validation_data=cifar10_sequence_val,
-        epochs=epochs,
-        batch_size=batch_size,
-        callbacks=callbacks
-    )
+    # Some bugs may exist in cifar10_sequence_train!
+    # # Fit model
+    # model.fit(
+    #     cifar10_sequence_train,
+    #     validation_data=cifar10_sequence_val,
+    #     epochs=epochs,
+    #     batch_size=batch_size,
+    #     callbacks=callbacks
+    # )
+
+    data_augmentation = False
+    if not data_augmentation:
+        (x_train, y_train), (x_test, y_test) = load_cifar10()
+        print('Not using data augmentation.')
+        model.fit(x_train, y_train,
+                  batch_size=batch_size,
+                  epochs=epochs,
+                  validation_data=(x_test, y_test),
+                  shuffle=True,
+                  callbacks=callbacks)
 
 
 if __name__ == "__main__":

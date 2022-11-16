@@ -27,13 +27,9 @@ def color_normalize(train_images, test_images):
     return train_images, test_images
 
 
-def load_cifar10_sequence(batch_size=128,
-                          shuffle=True,
-                          seed=42,
-                          norm=False,
-                          subtract_pixel_mean=True,
-                          validation_split=0,
-                          to_categorical=True, **kwargs):
+def load_cifar10(norm=False,
+                 subtract_pixel_mean=True,
+                 to_categorical=True):
 
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
@@ -55,6 +51,21 @@ def load_cifar10_sequence(batch_size=128,
     if to_categorical:
         y_train = tf.keras.utils.to_categorical(y_train)
         y_test = tf.keras.utils.to_categorical(y_test)
+
+    return (x_train, y_train), (x_test, y_test)
+
+
+def load_cifar10_sequence(batch_size=128,
+                          shuffle=True,
+                          seed=42,
+                          norm=False,
+                          subtract_pixel_mean=True,
+                          validation_split=0,
+                          to_categorical=True, **kwargs):
+
+    (x_train, y_train), (x_test, y_test) = load_cifar10(norm=norm,
+                                                        subtract_pixel_mean=subtract_pixel_mean,
+                                                        to_categorical=to_categorical)
 
     transforms = [pad_and_crop]
 
