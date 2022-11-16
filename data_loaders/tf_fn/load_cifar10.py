@@ -2,59 +2,61 @@
 # -*- coding: utf-8 -*-
 # @Date    : Nov-11-22 15:02
 # @Author  : Kan HUANG (kan.huang@connect.ust.hk)
+# @RefLink : https://keras.io/zh/examples/cifar10_resnet/
 
 import numpy as np
 import tensorflow as tf
-from data_loaders.tf_fn.augmentations import to_tensor, pad_and_crop
+from tensorflow.keras.datasets import cifar10
+from data_loaders.tf_fn.augmentations import pad_and_crop
 from data_loaders.tf_fn.data_sequences import CIFAR10Sequence
 
 
 def color_normalize(train_images, test_images):
+
     mean = [np.mean(train_images[:, :, :, i])
             for i in range(3)]  # [125.307, 122.95, 113.865]
     std = [np.std(train_images[:, :, :, i])
            for i in range(3)]  # [62.9932, 62.0887, 66.7048]
+
     for i in range(3):
-        train_images[:, :, :, i] = (
-            train_images[:, :, :, i] - mean[i]) / std[i]
-        test_images[:, :, :, i] = (test_images[:, :, :, i] - mean[i]) / std[i]
+        train_images[:, :, :, i] = \
+            (train_images[:, :, :, i] - mean[i]) / std[i]
+        test_images[:, :, :, i] = \
+            (test_images[:, :, :, i] - mean[i]) / std[i]
+
     return train_images, test_images
 
 
-def load_cifar10_sequence(**kwargs):
-    to_categorical = kwargs["to_categorical"] if "to_categorical" in kwargs else False
-    batch_size = kwargs["batch_size"] if "batch_size" in kwargs else 32
-    shuffle = kwargs["shuffle"] if "shuffle" in kwargs else False
-    seed = kwargs["seed"] if "seed" in kwargs else 42
-    validation_split = kwargs["validation_split"] if "validation_split" in kwargs else 0
-    norm = kwargs["norm"] if "norm" in kwargs else False
+def load_cifar10_sequence(batch_size=128,
+                          shuffle=True,
+                          seed=42,
+                          norm=False,
+                          subtract_pixel_mean=True,
+                          validation_split=0,
+                          to_categorical=True, **kwargs):
 
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-    x_train, x_test = color_normalize(x_train, x_test)
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-    to_categorical = True
+    # Rescale the data.
+    x_train = x_train.astype('float32') / 255.0
+    x_test = x_test.astype('float32') / 255.0
+
+    # Normalize the data first
+    if norm:
+        x_train, x_test = color_normalize(x_train, x_test)
+
+    # If subtract pixel mean is enabled
+    if subtract_pixel_mean:
+        x_train_mean = np.mean(x_train, axis=0)
+        x_train -= x_train_mean
+        x_test -= x_train_mean
+
+    # Convert class vectors to binary class matrices.
     if to_categorical:
         y_train = tf.keras.utils.to_categorical(y_train)
         y_test = tf.keras.utils.to_categorical(y_test)
 
-    # transforms = [to_tensor, pad_and_crop]
     transforms = [pad_and_crop]
-
-    if norm:
-        if float(tf.__version__[:3]) <= 2.3:
-            raise EnvironmentError(
-                f"TensorFLow version {tf.__version__} doesn't support Normalization.")
-        try:
-            from tensorflow.keras.layers import Normalization
-        except:
-            from tensorflow.keras.layers.experimental.preprocessing import Normalization
-
-        print("Apply data normalization.")
-        transforms.append(
-            Normalization(
-                mean=(0.49139968, 0.48215827, 0.44653124),
-                variance=(0.24703233, 0.24348505, 0.26158768))
-        )
 
     cifar10_sequence_train = CIFAR10Sequence(x_train, y_train,
                                              batch_size=batch_size,
@@ -83,7 +85,14 @@ def load_cifar10_sequence(**kwargs):
 
 
 def main():
-    cifar10_sequence_train, cifar10_sequence_val, cifar10_sequence_test = load_cifar10_sequence()
+    cifar10_sequence_train, cifar10_sequence_val, cifar10_sequence_test = \
+        load_cifar10_sequence(batch_size=128,
+                              shuffle=True,
+                              seed=42,
+                              norm=False,
+                              subtract_pixel_mean=True,
+                              validation_split=0.1,
+                              to_categorical=True)
 
 
 if __name__ == "__main__":

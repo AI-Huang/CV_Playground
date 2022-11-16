@@ -133,13 +133,3 @@ class CIFAR10Sequence(tf.keras.utils.Sequence):
         """shuffle data index
         """
         np.random.shuffle(self.index)
-
-    def normalize_y(self):
-        """Normalize y on the whole dataset
-        """
-        self.y_mean = self.y.mean()
-        self.y_std = self.y.std()
-        self.y = (self.y - self.y_mean) / self.y_std
-
-    def denormalize_y(self):
-        raise NotImplementedError

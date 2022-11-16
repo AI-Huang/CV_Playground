@@ -149,7 +149,7 @@ def main():
 
     # Setup model
     batch_x, batch_y = cifar10_sequence_train[0]
-    input_shape = batch_x.shape[1:]
+    input_shape = batch_x.shape[1:]  # Input image dimensions.
     if args.dataset == "mnist":
         # Preprocessing and choose optimizer for ResNet18
         if model_name in resnet_family:
