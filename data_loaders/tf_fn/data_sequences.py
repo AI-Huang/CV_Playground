@@ -78,7 +78,7 @@ class CIFAR10Sequence(tf.keras.utils.Sequence):
         batch_x = np.empty((batch_size, *self.image_size))
         batch_y = np.empty((batch_size, *self.label_size))
         for _, idx in enumerate(sample_indices):
-            batch_x[_], batch_y[_] = x[idx], y[idx]
+            batch_x[_, ], batch_y[_, ] = x[idx, ], y[idx, ]
 
         # Augment the images after fetching them
         if self.transforms is not None:

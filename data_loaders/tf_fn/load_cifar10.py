@@ -61,13 +61,17 @@ def load_cifar10_sequence(batch_size=128,
                           norm=False,
                           subtract_pixel_mean=True,
                           validation_split=0,
-                          to_categorical=True, **kwargs):
+                          to_categorical=True,
+                          data_augmentation=False):
 
     (x_train, y_train), (x_test, y_test) = load_cifar10(norm=norm,
                                                         subtract_pixel_mean=subtract_pixel_mean,
                                                         to_categorical=to_categorical)
 
-    transforms = [pad_and_crop]
+    if data_augmentation:
+        transforms = [pad_and_crop]
+    else:
+        transforms = None
 
     cifar10_sequence_train = CIFAR10Sequence(x_train, y_train,
                                              batch_size=batch_size,

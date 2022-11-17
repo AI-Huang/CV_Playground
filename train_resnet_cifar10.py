@@ -19,6 +19,7 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
+from sklearn.model_selection import train_test_split
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
 from models.tf_fn.optim_utils import cifar10_scheduler
@@ -94,6 +95,7 @@ def cmd_parser():
 def main():
     # Training settings
     args = cmd_parser()
+    print(f"Training arguments: {args}.")
     model_name = args.model_name
     dataset = args.dataset
     batch_size = args.batch_size
@@ -118,12 +120,14 @@ def main():
 
     # Prepare data
     cifar10_sequence_train, cifar10_sequence_val, cifar10_sequence_test = \
-        load_cifar10_sequence(to_categorical=True,
-                              batch_size=batch_size,
+        load_cifar10_sequence(batch_size=batch_size,
                               shuffle=True,
                               seed=args.seed,
+                              norm=args.norm,
+                              subtract_pixel_mean=True,
                               validation_split=args.validation_split,
-                              norm=args.norm)
+                              to_categorical=True,
+                              data_augmentation=False)
 
     # Set random seed
     try:
@@ -218,7 +222,7 @@ def main():
                  checkpoint_callback, tensorboard_callback]
 
     # Some bugs may exist in cifar10_sequence_train!
-    # # Fit model
+    # Fit model
     # model.fit(
     #     cifar10_sequence_train,
     #     validation_data=cifar10_sequence_val,
@@ -229,8 +233,16 @@ def main():
 
     data_augmentation = False
     if not data_augmentation:
-        (x_train, y_train), (x_test, y_test) = load_cifar10()
         print('Not using data augmentation.')
+
+        (x_train, y_train), (x_test, y_test) = load_cifar10()
+
+        if args.validation_split > 0:
+            print(f"Using validation_split: {args.validation_split}.")
+            x_train, x_val, y_train, y_val = train_test_split(
+                x_train, y_train,
+                test_size=args.validation_split, random_state=args.seed)
+
         model.fit(x_train, y_train,
                   batch_size=batch_size,
                   epochs=epochs,
