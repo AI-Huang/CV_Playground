@@ -22,7 +22,7 @@ from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorB
 from sklearn.model_selection import train_test_split
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
-from models.tf_fn.optim_utils import cifar10_scheduler
+from models.tf_fn.optim_utils import cifar10_scheduler, keras_lr_scheduler
 
 
 def cmd_parser():
@@ -75,7 +75,7 @@ def cmd_parser():
     parser.add_argument('--momentum', type=float, dest='momentum',
                         action='store', default=0.9, help=""".""")
     parser.add_argument('--lr_schedule', type=str, dest='lr_schedule',
-                        action='store', default="mnist_schedule", help=""".""")
+                        action='store', default="no_schedule", help=""".""")
 
     # Attention parameters
     parser.add_argument('--attention', type=string2bool, dest='attention',
@@ -105,6 +105,8 @@ def main():
     lr_schedule = args.lr_schedule
     if lr_schedule == "cifar10_scheduler":
         lr_schedule_fn = cifar10_scheduler
+    elif lr_schedule == "keras_lr_scheduler":
+        lr_schedule_fn = keras_lr_scheduler
 
     # Check inputs
     resnet_family = ["ResNet18", "ResNet34",
