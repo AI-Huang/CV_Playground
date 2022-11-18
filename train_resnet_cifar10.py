@@ -19,7 +19,6 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
-from sklearn.model_selection import train_test_split
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
 from models.tf_fn.optim_utils import cifar10_scheduler, keras_lr_scheduler
@@ -60,6 +59,8 @@ def cmd_parser():
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to True.")
+    parser.add_argument('--data_augmentation', type=str, default=None, choices=['subtract_pixel_mean', 'subtract_mean_pad_crop', None],
+                        help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
                         help='random seed (default: numpy.random.randint(10000) )')
     parser.add_argument('--date_time', type=str, dest='date_time',
@@ -99,7 +100,6 @@ def cmd_parser():
 def main():
     # Training settings
     args = cmd_parser()
-    print(f"Training arguments: {args}.")
     model_name = args.model_name
     dataset = args.dataset
     batch_size = args.batch_size
@@ -131,11 +131,34 @@ def main():
         load_cifar10_sequence(batch_size=batch_size,
                               shuffle=True,
                               seed=args.seed,
-                              norm=args.norm,
+                              normalize=args.norm,
                               subtract_pixel_mean=True,
                               validation_split=args.validation_split,
                               to_categorical=True,
                               data_augmentation=False)
+
+    data_augmentation = args.data_augmentation
+    if data_augmentation is None:
+        print('Not using data augmentation.')
+        (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
+            load_cifar10(
+            validation_split=args.validation_split,
+            seed=args.seed)
+    elif data_augmentation == "subtract_pixel_mean":
+        print('subtract pixel mean.')
+        (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
+            load_cifar10(
+            subtract_pixel_mean=True,
+            validation_split=args.validation_split,
+            seed=args.seed)
+    elif data_augmentation == "subtract_mean_pad_crop":
+        print('subtract pixel mean, and pad and crop.')
+        (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
+            load_cifar10(
+            subtract_pixel_mean=True,
+            validation_split=args.validation_split,
+            seed=args.seed,
+            pad_and_crop=True)
 
     # Set random seed
     try:
@@ -199,6 +222,7 @@ def main():
     os.makedirs(log_dir, exist_ok=True)
     with open(os.path.join(log_dir, "config.json"), 'w', encoding='utf8') as json_file:
         json.dump(vars(args), json_file, ensure_ascii=False)
+    print(f"Training arguments: {args}.")
 
     optimizer = create_optimizer(args.optimizer_name,
                                  learning_rate=args.learning_rate,
@@ -244,24 +268,12 @@ def main():
     #     callbacks=callbacks
     # )
 
-    data_augmentation = False
-    if not data_augmentation:
-        print('Not using data augmentation.')
-
-        (x_train, y_train), (x_test, y_test) = load_cifar10()
-
-        if args.validation_split > 0:
-            print(f"Using validation_split: {args.validation_split}.")
-            x_train, x_val, y_train, y_val = train_test_split(
-                x_train, y_train,
-                test_size=args.validation_split, random_state=args.seed)
-
-        model.fit(x_train, y_train,
-                  batch_size=batch_size,
-                  epochs=epochs,
-                  validation_data=(x_test, y_test),
-                  shuffle=True,
-                  callbacks=callbacks)
+    model.fit(x_train, y_train,
+              batch_size=batch_size,
+              epochs=epochs,
+              validation_data=(x_test, y_test),
+              shuffle=True,
+              callbacks=callbacks)
 
 
 if __name__ == "__main__":
