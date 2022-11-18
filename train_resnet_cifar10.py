@@ -51,17 +51,21 @@ def cmd_parser():
     parser.add_argument('--model_name', type=str, dest='model_name',
                         action='store', default="NoModel", help="""model_name, one of ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152", "LeNet5", "AttentionLeNet5"].""")
     parser.add_argument('--n', type=int, dest='n',
-                        action='store', default=3, help=""".""")
+                        action='store', default=3, help="""Order of the ResNet, determines the depth.""")
     parser.add_argument('--version', type=int, dest='version',
-                        action='store', default=1, help=""".""")
+                        action='store', default=1, help="""ResNet's version, 1 or 2.""")
     parser.add_argument('--batch_size', type=int, dest='batch_size',
-                        action='store', default=32, help=""".""")
-    parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
-                        help='random seed (default: numpy.random.randint(10000) )')
+                        action='store', default=32, help="""Dataloader's batchsize.""")
     parser.add_argument('--validation_split', type=float, dest='validation_split',
-                        action='store', default=0.2, help=""".""")
+                        action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to True.")
+    parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
+                        help='random seed (default: numpy.random.randint(10000) )')
+    parser.add_argument('--date_time', type=str, dest='date_time',
+                        action='store', default=None, help="""Custom date_time.""")
+    parser.add_argument('--run', type=int, dest='run',
+                        action='store', default=None, help="""No. of running.""")
 
     # Optimization parameters
     parser.add_argument('--epochs', type=int, dest='epochs',
@@ -103,6 +107,8 @@ def main():
     learning_rate = args.learning_rate
     optimizer_name = args.optimizer_name
     lr_schedule = args.lr_schedule
+    run = args.run
+
     if lr_schedule == "cifar10_scheduler":
         lr_schedule_fn = cifar10_scheduler
     elif lr_schedule == "keras_lr_scheduler":
@@ -178,12 +184,17 @@ def main():
             model_name, input_shape=input_shape, num_classes=args.num_classes)
 
     # Config paths
-    date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-    prefix = os.path.join("~", "Documents", "DeepLearningData")
+    if args.date_time is None:
+        date_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+    else:
+        date_time = args.date_time
+    output_dir = os.path.join("~", "Documents", "DeepLearningData")
     subfix = os.path.join(
         dataset, model_name, f"b{batch_size}-e{epochs}-lr{learning_rate}", optimizer_name, date_time)
-    ckpt_dir = os.path.expanduser(os.path.join(prefix, subfix, "ckpts"))
-    log_dir = os.path.expanduser(os.path.join(prefix, subfix, "logs"))
+    if run is not None:
+        subfix = os.path.join(subfix, f"run{run}")
+    ckpt_dir = os.path.expanduser(os.path.join(output_dir, subfix, "ckpts"))
+    log_dir = os.path.expanduser(os.path.join(output_dir, subfix, "logs"))
     os.makedirs(ckpt_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     with open(os.path.join(log_dir, "config.json"), 'w', encoding='utf8') as json_file:
