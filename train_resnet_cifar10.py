@@ -18,6 +18,8 @@ from datetime import datetime
 from functools import partial
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
@@ -59,7 +61,7 @@ def cmd_parser():
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to True.")
-    parser.add_argument('--data_augmentation', type=str, default=None, choices=['subtract_pixel_mean', 'subtract_mean_pad_crop', None],
+    parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation", None],
                         help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
                         help='random seed (default: numpy.random.randint(10000) )')
@@ -159,8 +161,59 @@ def main():
             validation_split=args.validation_split,
             seed=args.seed,
             pad_and_crop=True)
+    elif data_augmentation == "keras_augmentation":
+        # Load the CIFAR10 data.
+        (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10()
+        print('Using real-time data augmentation.')
+        # This will do preprocessing and realtime data augmentation:
+        datagen = ImageDataGenerator(
+            # set input mean to 0 over the dataset
+            featurewise_center=False,
+            # set each sample mean to 0
+            samplewise_center=False,
+            # divide inputs by std of dataset
+            featurewise_std_normalization=False,
+            # divide each input by its std
+            samplewise_std_normalization=False,
+            # apply ZCA whitening
+            zca_whitening=False,
+            # epsilon for ZCA whitening
+            zca_epsilon=1e-06,
+            # randomly rotate images in the range (deg 0 to 180)
+            rotation_range=0,
+            # randomly shift images horizontally
+            width_shift_range=0.1,
+            # randomly shift images vertically
+            height_shift_range=0.1,
+            # set range for random shear
+            shear_range=0.,
+            # set range for random zoom
+            zoom_range=0.,
+            # set range for random channel shifts
+            channel_shift_range=0.,
+            # set mode for filling points outside the input boundaries
+            fill_mode='nearest',
+            # value used for fill_mode = "constant"
+            cval=0.,
+            # randomly flip images
+            horizontal_flip=True,
+            # randomly flip images
+            vertical_flip=False,
+            # set rescaling factor (applied before any other transformation)
+            rescale=None,
+            # set function that will be applied on each input
+            preprocessing_function=None,
+            # image data format, either "channels_first" or "channels_last"
+            data_format=None,
+            # fraction of images reserved for validation (strictly between 0 and 1)
+            validation_split=0.0)
+
+        # Compute quantities required for featurewise normalization
+        # (std, mean, and principal components if ZCA whitening is applied).
+        datagen.fit(x_train)
 
     # Set random seed
+    # Set the seed again for model's fitting
     try:
         tf.keras.utils.set_random_seed(args.seed)
     except:
@@ -180,7 +233,6 @@ def main():
         if model_name in resnet_family:
             model_core = create_model(
                 model_name, input_shape=input_shape, num_classes=args.num_classes)
-
             input_ = tf.keras.layers.Input(input_shape, dtype=tf.uint8)
             x = tf.cast(input_, tf.float32)
             # padding 28x28 to 32x32
@@ -202,6 +254,7 @@ def main():
             input_shape=input_shape, depth=args.depth, version=args.version)
         # Model name, depth and version
         model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
+        args.model_name = model_name
     else:
         model = create_model(
             model_name, input_shape=input_shape, num_classes=args.num_classes)
@@ -268,12 +321,20 @@ def main():
     #     callbacks=callbacks
     # )
 
-    model.fit(x_train, y_train,
-              batch_size=batch_size,
-              epochs=epochs,
-              validation_data=(x_test, y_test),
-              shuffle=True,
-              callbacks=callbacks)
+    if data_augmentation == "keras_augmentation":
+        # Fit the model on the batches generated by datagen.flow().
+        model.fit_generator(datagen.flow
+                            (x_train, y_train, batch_size=batch_size),
+                            validation_data=(x_test, y_test),
+                            epochs=epochs, verbose=1, workers=4,
+                            callbacks=callbacks)
+    else:
+        model.fit(x_train, y_train,
+                  batch_size=batch_size,
+                  epochs=epochs,
+                  validation_data=(x_test, y_test),
+                  shuffle=True,
+                  callbacks=callbacks)
 
 
 if __name__ == "__main__":
