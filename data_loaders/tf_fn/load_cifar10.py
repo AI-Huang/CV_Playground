@@ -30,6 +30,7 @@ def color_normalize(train_images, test_images):
 
 def load_cifar10(normalize=False,
                  subtract_pixel_mean=False,
+                 featurewise_std_normalization=False,
                  validation_split=0.0,
                  seed=None,
                  pad_and_crop=False,
@@ -45,11 +46,22 @@ def load_cifar10(normalize=False,
     if normalize:
         x_train, x_test = color_normalize(x_train, x_test)
 
+    x_train_mean = np.mean(x_train, axis=0)
+    x_train_std = np.std(x_train, axis=0)
+
+    # If apply the mean and standard deviation normalisation
+    if featurewise_std_normalization:
+        subtract_pixel_mean = True
+
     # If subtract pixel mean is enabled
     if subtract_pixel_mean:
-        x_train_mean = np.mean(x_train, axis=0)
         x_train -= x_train_mean
         x_test -= x_train_mean
+    
+    if featurewise_std_normalization:
+        print("featurewise_std_normalization")
+        x_train /= x_train_std
+        x_test /= x_train_std
 
     # Convert class vectors to binary class matrices.
     if to_categorical:
@@ -82,8 +94,8 @@ def load_cifar10_sequence(batch_size=128,
                           data_augmentation=False):
 
     (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10(normalize=normalize,
-                                                        subtract_pixel_mean=subtract_pixel_mean,
-                                                        to_categorical=to_categorical)
+                                                                        subtract_pixel_mean=subtract_pixel_mean,
+                                                                        to_categorical=to_categorical)
 
     if data_augmentation:
         transforms = [pad_and_crop]
