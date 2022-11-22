@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Date    : Aug-06-20 14:33
-# @Author  : Kelly Hwong (dianhuangkan@gmail.com)
+# @Update  : Nov-25-20 03:15
+# @Update  : Nov-27-20 16:32
+# @Author  : Kan HUANG (kan.huang@connect.ust.hk)
 
 import errno
 import six
