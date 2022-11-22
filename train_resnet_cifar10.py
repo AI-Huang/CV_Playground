@@ -15,10 +15,9 @@ import os
 import json
 import argparse
 from datetime import datetime
-from functools import partial
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, TensorBoard, ModelCheckpoint
+from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, ModelCheckpoint
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
 from models.tf_fn.optim_utils import cifar10_scheduler, keras_lr_scheduler
@@ -53,6 +52,9 @@ def cmd_parser():
                         action='store', default=3, help="""Order of the ResNet, determines the depth.""")
     parser.add_argument('--version', type=int, dest='version',
                         action='store', default=1, help="""ResNet's version, 1 or 2.""")
+    parser.add_argument('--se_net', action='store_true',
+                        help="Whether to use SENet module.")
+
     parser.add_argument('--batch_size', type=int, dest='batch_size',
                         action='store', default=32, help="""Dataloader's batchsize.""")
     parser.add_argument('--validation_split', type=float, dest='validation_split',
@@ -199,12 +201,15 @@ def main():
             depth = n * 9 + 2
         args.depth = depth
         model = create_model_cifar10(
-            input_shape=input_shape, depth=args.depth, version=args.version)
+            input_shape=input_shape, depth=args.depth, se_net=args.se_net, version=args.version)
         # Model name, depth and version
         model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
+        # SENet
+        model_name = "SE-" + model_name
     else:
         model = create_model(
             model_name, input_shape=input_shape, num_classes=args.num_classes)
+    args.model_name = model_name
 
     # Config paths
     if args.date_time is None:
@@ -220,6 +225,8 @@ def main():
     log_dir = os.path.expanduser(os.path.join(output_dir, subfix, "logs"))
     os.makedirs(ckpt_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
+
+    # Save args
     with open(os.path.join(log_dir, "config.json"), 'w', encoding='utf8') as json_file:
         json.dump(vars(args), json_file, ensure_ascii=False)
     print(f"Training arguments: {args}.")
