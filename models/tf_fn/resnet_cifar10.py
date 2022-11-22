@@ -11,6 +11,7 @@ from tensorflow.keras.layers import Dense, Conv2D, BatchNormalization, Activatio
 from tensorflow.keras.layers import AveragePooling2D, Input, Flatten
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.models import Model
+from models.tf_fn.se_net.se_block import se_block
 
 # Training parameters
 batch_size = 32  # orig paper trained all networks with batch_size=128
@@ -96,7 +97,7 @@ def resnet_layer(inputs,
     return x
 
 
-def resnet_v1(input_shape, depth, num_classes=10):
+def resnet_v1(input_shape, depth, se_net=False, num_classes=10):
     """ResNet Version 1 Model builder [a]
 
     Stacks of 2 x (3 x 3) Conv2D-BN-ReLU
@@ -158,6 +159,10 @@ def resnet_v1(input_shape, depth, num_classes=10):
                                  strides=strides,
                                  activation=None,
                                  batch_normalization=False)
+
+            # Add SE attention block here, if se_net is True
+            if se_net == True:
+                x = se_block(x, name=f"stack_{stack}_block_{res_block}_se_block")
 
             x = keras.layers.add([x, y])
             x = Activation('relu')(x)

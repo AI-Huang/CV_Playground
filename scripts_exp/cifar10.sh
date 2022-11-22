@@ -10,37 +10,25 @@
 # python train_resnet_cifar10.py --n=3 --version=1 --dataset=cifar10 --data_augmentation=subtract_mean_pad_crop --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
 # done
 
-# keras_augmentation
+# # keras_augmentation
+# for n in "3 5 7 9 18"; do
+# date_time=$(date "+%Y%m%d-%H%M%S")
+# for ((i=1;i<=5;i++)); do
+# # --seed=42
+# python train_resnet_cifar10.py --n=${n} --version=1 --dataset=cifar10 --data_augmentation=keras_augmentation --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
+# done
+# done
+
+# std_norm_pad_crop
 date_time=$(date "+%Y%m%d-%H%M%S")
 for ((i=1;i<=5;i++)); do
 # --seed=42
-python train_resnet_cifar10.py --n=3 --version=1 --dataset=cifar10 --data_augmentation=keras_augmentation --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
+python train_resnet_cifar10.py --n=3 --version=1 --dataset=cifar10 --data_augmentation=std_norm_pad_crop --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
 done
 
-# keras_augmentation
-date_time=$(date "+%Y%m%d-%H%M%S")
-for ((i=1;i<=5;i++)); do
-# --seed=42
-python train_resnet_cifar10.py --n=5 --version=1 --dataset=cifar10 --data_augmentation=keras_augmentation --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
-done
-
-# keras_augmentation
-date_time=$(date "+%Y%m%d-%H%M%S")
-for ((i=1;i<=5;i++)); do
-# --seed=42
-python train_resnet_cifar10.py --n=7 --version=1 --dataset=cifar10 --data_augmentation=keras_augmentation --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
-done
-
-# keras_augmentation
-date_time=$(date "+%Y%m%d-%H%M%S")
-for ((i=1;i<=5;i++)); do
-# --seed=42
-python train_resnet_cifar10.py --n=9 --version=1 --dataset=cifar10 --data_augmentation=keras_augmentation --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
-done
-
-# keras_augmentation
-date_time=$(date "+%Y%m%d-%H%M%S")
-for ((i=1;i<=5;i++)); do
-# --seed=42
-python train_resnet_cifar10.py --n=18 --version=1 --dataset=cifar10 --data_augmentation=keras_augmentation --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
-done
+# # std_norm_pad_crop, SENet
+# date_time=$(date "+%Y%m%d-%H%M%S")
+# for ((i=1;i<=5;i++)); do
+# # --seed=42
+# python train_resnet_cifar10.py --n=3 --version=1 --dataset=cifar10 --data_augmentation=std_norm_pad_crop --validation_split=0.0 --batch_size=32 --epochs=200  --learning_rate=0.001 --optimizer_name=Adam --lr_schedule=keras_lr_scheduler --date_time=${date_time} --run=${i};
+# done
