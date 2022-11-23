@@ -62,7 +62,7 @@ def cmd_parser():
     parser.add_argument('--validation_split', type=float, dest='validation_split',
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
-                        help="Whether to normalize the dataset, defaults to True.")
+                        help="Whether to normalize the dataset, defaults to False.")
     parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation", "std_norm_pad_crop", None],
                         help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
