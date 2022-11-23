@@ -13,7 +13,6 @@ import os
 from tqdm import tqdm
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
@@ -35,7 +34,7 @@ def cmd_args():
 
     parser.add_argument('--loss', type=str, default='cross_entropy')
     parser.add_argument('--optimizer', type=str, default='sgd')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M')
@@ -68,12 +67,11 @@ def train(model, train_loader, criterion, optimizer, epoch, args):
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+            print(
+                f"Train Epoch: {epoch}. Batch [{batch_idx}/{len(train_loader)}].\tSample [{batch_idx * len(data)}/{len(train_loader.dataset)} ({100. * batch_idx / len(train_loader):.0f}%)].\tLoss: {loss.item():.6f}")
 
 
-def test(model, test_loader, args):
+def test(model, test_loader, criterion, args):
     model.eval()
     device = args.device
     test_loss = 0
@@ -83,7 +81,7 @@ def test(model, test_loader, args):
             data, target = data.to(device), target.to(device)
             output = model(data)
             # sum up batch loss
-            test_loss += F.nll_loss(output, target, reduction='sum').item()
+            test_loss += criterion(output, target).item()
             # get the index of the max log-probability
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
@@ -92,9 +90,7 @@ def test(model, test_loader, args):
     test_accuracy = 100. * correct / len(test_loader.dataset)
 
     print(
-        '\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(test_loader.dataset), test_accuracy)
-    )
+        f"\nTest set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({test_accuracy:.0f}%)\n")
 
     return {"test_loss": test_loss, "test_accuracy": test_accuracy}
 
@@ -145,7 +141,8 @@ def main():
 
     model = LeNet5(output_dim=10).to(device)
     if args.loss == "cross_entropy":
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss().to(device)
+        criterion_test = nn.CrossEntropyLoss(reduction='sum').to(device)
     scheduler = None
     if args.optimizer == "sgd":
         optimizer = optim.SGD(model.parameters(),
@@ -153,12 +150,12 @@ def main():
     else:
         # TODO, other optimizers such as Adam
         StepLR(optimizer, step_size=1, gamma=args.gamma)
-        
+
     for epoch in tqdm(range(args.epochs)):
         if args.do_train:
             train(model, train_loader, criterion, optimizer, epoch, args)
         if args.do_eval:
-            test_result = test(model, test_loader, args)
+            test_result = test(model, test_loader, criterion_test, args)
             with open(os.path.join(output_dir, 'test.csv'), "a") as f:
                 f.write(",".join(
                     [str(_) for _ in [
