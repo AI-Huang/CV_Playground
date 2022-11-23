@@ -6,16 +6,19 @@
 
 
 from __future__ import print_function
+
+from models.torch_fn.lenet import LeNet5
+from torch.optim.lr_scheduler import StepLR
+from torchvision import datasets, transforms
+import torch.nn as nn
+import torch
+from tqdm import tqdm
 import argparse
 from datetime import datetime
 import json
 import os
-from tqdm import tqdm
-import torch
-import torch.nn as nn
-from torchvision import datasets, transforms
-from torch.optim.lr_scheduler import StepLR
-from models.torch_fn.lenet import LeNet5
+import sys
+sys.path.append(os.getcwd())
 
 
 def cmd_args():
