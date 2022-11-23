@@ -13,7 +13,6 @@ import os
 from tqdm import tqdm
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from models.torch_fn.lenet import LeNet5
@@ -145,8 +144,8 @@ def main():
         criterion_test = nn.CrossEntropyLoss(reduction='sum').to(device)
     scheduler = None
     if args.optimizer == "sgd":
-        optimizer = optim.SGD(model.parameters(),
-                              lr=args.lr, momentum=args.momentum)
+        optimizer = torch.optim.SGD(model.parameters(),
+                                    lr=args.lr, momentum=args.momentum)
     else:
         # TODO, other optimizers such as Adam
         StepLR(optimizer, step_size=1, gamma=args.gamma)
