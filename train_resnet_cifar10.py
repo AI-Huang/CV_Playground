@@ -174,6 +174,7 @@ def main():
     elif data_augmentation == "keras_augmentation":
         # Load the CIFAR10 data.
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10()
+        print('Using keras augmentation.')
         datagen = get_datagenerator(x=x_train)
 
     # Set random seed
@@ -267,14 +268,15 @@ def main():
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir, histogram_freq=1, update_freq="batch")
 
-    ckpt_filename = "%s-epoch-{epoch:03d}-categorical_accuracy-{categorical_accuracy:.4f}.h5" % model_name
+    ckpt_filename = "%s-epoch-{epoch:03d}-val_categorical_accuracy-{val_categorical_accuracy:.4f}.h5" % model_name
     ckpt_filepath = os.path.join(ckpt_dir, ckpt_filename)
     checkpoint_callback = ModelCheckpoint(
         filepath=ckpt_filepath,
-        monitor="categorical_accuracy",
+        monitor="val_categorical_accuracy",
         verbose=1,
-        save_weights_only=True
-    )
+        save_weights_only=True,
+        mode='max',
+        save_best_only=True)
 
     callbacks = [csv_logger, lr_scheduler,
                  checkpoint_callback, tensorboard_callback]
