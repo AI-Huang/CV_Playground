@@ -4,7 +4,6 @@
 # @Author  : Kan HUANG (kan.huang@connect.ust.hk)
 
 
-
 import tensorflow as tf
 import sys
 sys.path.append(".")

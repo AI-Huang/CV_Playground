@@ -1,3 +1,5 @@
+export PYTHONPATH="${PYTHONPATH}:./"
+
 # date_time=$(date "+%Y%m%d-%H%M%S")
 # for ((i=1;i<=5;i++)); do
 # # --seed=42
