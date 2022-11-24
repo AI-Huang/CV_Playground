@@ -33,7 +33,7 @@ def load_cifar10(normalize=False,
                  featurewise_std_normalization=False,
                  validation_split=0.0,
                  seed=None,
-                 pad_and_crop=False,
+                 do_pad_and_crop=False,
                  to_categorical=True):
 
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -57,7 +57,7 @@ def load_cifar10(normalize=False,
     if subtract_pixel_mean:
         x_train -= x_train_mean
         x_test -= x_train_mean
-    
+
     if featurewise_std_normalization:
         print("featurewise_std_normalization")
         x_train /= x_train_std
@@ -77,8 +77,8 @@ def load_cifar10(normalize=False,
             test_size=validation_split, random_state=seed)
 
     # Only pad and crop on the train set
-    if pad_and_crop:
-        from data_loaders.tf_fn.augmentations import pad_and_crop
+    if do_pad_and_crop:
+        print(f"Using TensorFlow augmentation sequence: pad_and_crop.")
         x_train = pad_and_crop(x_train)
 
     return (x_train, y_train), (x_val, y_val), (x_test, y_test)
