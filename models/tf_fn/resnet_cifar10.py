@@ -162,7 +162,8 @@ def resnet_v1(input_shape, depth, se_net=False, num_classes=10):
 
             # Add SE attention block here, if se_net is True
             if se_net == True:
-                x = se_block(x, name=f"stack_{stack}_block_{res_block}_se_block")
+                x = se_block(x, reduction_ratio=16,
+                             name=f"stack_{stack}_block_{res_block}_se_block")
 
             x = keras.layers.add([x, y])
             x = Activation('relu')(x)

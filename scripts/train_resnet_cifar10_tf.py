@@ -154,7 +154,8 @@ def main():
             load_cifar10(
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
-            seed=args.seed)
+            seed=args.seed,
+            do_pad_and_crop=False)
     elif data_augmentation == "subtract_mean_pad_crop":
         print('subtract pixel mean, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
@@ -162,7 +163,7 @@ def main():
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
             seed=args.seed,
-            pad_and_crop=True)
+            do_pad_and_crop=True)
     elif data_augmentation == "std_norm_pad_crop":
         print('Mean and standard deviation normalisation, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
@@ -170,7 +171,7 @@ def main():
             featurewise_std_normalization=True,
             validation_split=args.validation_split,
             seed=args.seed,
-            pad_and_crop=True)
+            do_pad_and_crop=True)
     elif data_augmentation == "keras_augmentation":
         # Load the CIFAR10 data.
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10()
@@ -220,7 +221,8 @@ def main():
         # Model name, depth and version
         model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
         # SENet
-        model_name = "SE-" + model_name
+        if args.se_net:
+            model_name = "SE-" + model_name
     else:
         model = create_model(
             model_name, input_shape=input_shape, num_classes=args.num_classes)
