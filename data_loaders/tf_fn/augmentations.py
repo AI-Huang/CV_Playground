@@ -33,6 +33,7 @@ to_tensor = tf.keras.Sequential([
 # Optional
 tf_rescale = Rescaling(1./255)
 
+# Pad, flip, and crop
 pad_and_crop = tf.keras.Sequential([
     layers.ZeroPadding2D(padding=(4, 4)),
     RandomFlip("horizontal"),
