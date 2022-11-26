@@ -232,8 +232,10 @@ def main():
             # Augmentation operations
             print(
                 f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
-            input_ = pad_and_crop(input_)
-        x = model_core(input_)
+            x = pad_and_crop(input_)
+        else:
+            x = input_
+        x = model_core(x)
         model = tf.keras.Model(inputs=[input_], outputs=[x])
         # Model name, depth and version
         model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
