@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, ModelCheckpoint
+from data_loaders.tf_fn.augmentations import pad_and_crop
 from data_loaders.tf_fn.load_cifar10 import load_cifar10, load_cifar10_sequence
 from data_loaders.tf_fn.data_generator import get_datagenerator
 from models.tf_fn.model_utils import create_model, create_optimizer, create_model_cifar10
@@ -163,7 +164,7 @@ def main():
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
             seed=args.seed,
-            do_pad_and_crop=True)
+            do_pad_and_crop=False)
     elif data_augmentation == "std_norm_pad_crop":
         print('Mean and standard deviation normalisation, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
@@ -171,7 +172,7 @@ def main():
             featurewise_std_normalization=True,
             validation_split=args.validation_split,
             seed=args.seed,
-            do_pad_and_crop=True)
+            do_pad_and_crop=False)
     elif data_augmentation == "pad_crop":
         print("Pad and crop, no mean and standard deviation normalisation.")
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
@@ -179,7 +180,7 @@ def main():
             featurewise_std_normalization=False,  # False here for no mean_std_norm
             validation_split=args.validation_split,
             seed=args.seed,
-            do_pad_and_crop=True)
+            do_pad_and_crop=False)
     elif data_augmentation == "keras_augmentation":
         # Load the CIFAR10 data.
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10()
@@ -224,8 +225,16 @@ def main():
         elif version == 2:
             depth = n * 9 + 2
         args.depth = depth
-        model = create_model_cifar10(
+        model_core = create_model_cifar10(
             input_shape=input_shape, depth=args.depth, se_net=args.se_net, version=args.version)
+        input_ = tf.keras.layers.Input(input_shape, dtype=tf.float32)
+        if data_augmentation == "subtract_mean_pad_crop" or data_augmentation == "std_norm_pad_crop" or data_augmentation == "pad_crop":
+            # Augmentation operations
+            print(
+                f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
+            input_ = pad_and_crop(input_)
+        x = model_core(input_)
+        model = tf.keras.Model(inputs=[input_], outputs=[x])
         # Model name, depth and version
         model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
         # SENet
