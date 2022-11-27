@@ -64,7 +64,7 @@ def cmd_parser():
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to False.")
-    parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation", "std_norm_pad_crop", "pad_crop", None],
+    parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation", "std_norm_pad_crop", "pad_crop", "random_translation", None],
                         help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
                         help='random seed (default: numpy.random.randint(10000) )')
@@ -233,6 +233,16 @@ def main():
             print(
                 f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
             x = pad_and_crop(input_)
+        elif data_augmentation == "random_translation":
+            x = tf.keras.layers.RandomTranslation(
+                height_factor=(-0.125, 0.125),
+                width_factor=(-0.125, 0.125),
+                fill_mode='nearest',
+                interpolation='bilinear',
+                # seed=None,
+                fill_value=0.0
+            )(input_)
+            x = tf.keras.layers.RandomFlip("horizontal")(x)
         else:
             x = input_
         x = model_core(x)
