@@ -69,7 +69,7 @@ def cmd_parser():
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to False.")
     parser.add_argument('--data_preprocessing', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation",
-                        "std_norm_pad_crop", None], help="Which data preprocessing to apply to the dataset, defaults to None.")
+                                                                                 "std_norm", None], help="Which data preprocessing to apply to the dataset, defaults to None.")
     parser.add_argument('--data_augmentation', type=str, default=None, choices=[
                         "pad_crop", "random_translation", None], help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
@@ -164,7 +164,7 @@ def main():
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
             seed=args.seed)
-    elif data_preprocessing == "std_norm_pad_crop":
+    elif data_preprocessing == "std_norm":
         print('Mean and standard deviation normalisation, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
             load_cifar10(

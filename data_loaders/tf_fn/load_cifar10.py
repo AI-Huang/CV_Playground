@@ -46,7 +46,7 @@ def load_cifar10(normalize=False,
     if normalize:
         x_train, x_test = color_normalize(x_train, x_test)
 
-    x_train_mean = np.mean(x_train, axis=0)
+    x_train_mean = np.mean(x_train, axis=0)  # Per pixel mean?
     x_train_std = np.std(x_train, axis=0)
 
     # If apply the mean and standard deviation normalisation
