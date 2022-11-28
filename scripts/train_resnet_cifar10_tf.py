@@ -68,10 +68,15 @@ def cmd_parser():
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to False.")
-    parser.add_argument('--data_preprocessing', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation",
-                                                                                 "std_norm", None], help="Which data preprocessing to apply to the dataset, defaults to None.")
-    parser.add_argument('--data_augmentation', type=str, default=None, choices=[
-                        "pad_crop", "random_translation", None], help="Which data augmentation to apply to the dataset, defaults to None.")
+    parser.add_argument('--data_preprocessing', type=str, default=None,
+                        choices=["subtract_pixel_mean",
+                                 "subtract_mean_pad_crop",
+                                 "keras_augmentation",
+                                 "std_norm", None],
+                        help="Which data preprocessing to apply to the dataset, defaults to None.")
+    parser.add_argument('--data_augmentation', type=str, default=None,
+                        choices=["pad_crop", "random_translation", None],
+                        help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
                         help='random seed (default: numpy.random.randint(10000) )')
     parser.add_argument('--date_time', type=str, dest='date_time',

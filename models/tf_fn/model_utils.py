@@ -125,10 +125,12 @@ def create_optimizer(optimizer_name="Adam", **kwargs):
 
     elif optimizer_name == "SGD":
         learning_rate = kwargs["learning_rate"] if "learning_rate" in kwargs else 0.0
+        weight_decay = kwargs["weight_decay"] if "weight_decay" in kwargs else None
         momentum = kwargs["momentum"] if "momentum" in kwargs else 0.0
         optimizer = tf.keras.optimizers.SGD(
             learning_rate=learning_rate,
             momentum=momentum,
+            weight_decay=weight_decay,
             nesterov=False, name='SGD')
 
     elif optimizer_name == "SGDW":
