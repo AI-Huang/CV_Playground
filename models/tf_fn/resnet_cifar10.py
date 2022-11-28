@@ -151,8 +151,8 @@ def resnet_v1(input_shape, depth, se_net=False, num_classes=10):
                              activation=None)
 
             if stack > 0 and res_block == 0:  # first layer but not first stack
-                # linear projection residual shortcut connection to match
-                # changed dims
+                # linear projection residual shortcut connection to match changed dims,
+                # also called conv_shortcut
                 x = resnet_layer(inputs=x,
                                  num_filters=num_filters,
                                  kernel_size=1,

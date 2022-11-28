@@ -130,7 +130,7 @@ def create_optimizer(optimizer_name="Adam", **kwargs):
         optimizer = tf.keras.optimizers.SGD(
             learning_rate=learning_rate,
             momentum=momentum,
-            weight_decay=weight_decay,
+            # weight_decay=weight_decay, # Unavailable for tf2.5
             nesterov=False, name='SGD')
 
     elif optimizer_name == "SGDW":
