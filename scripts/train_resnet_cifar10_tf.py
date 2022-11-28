@@ -17,6 +17,10 @@ import argparse
 from datetime import datetime
 import numpy as np
 import tensorflow as tf
+try:
+    from tensorflow.keras.layers import RandomFlip, RandomTranslation
+except:
+    from tensorflow.keras.layers.experimental.preprocessing import RandomFlip, RandomTranslation
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler, ModelCheckpoint
 from data_loaders.tf_fn.augmentations import pad_and_crop
@@ -64,8 +68,8 @@ def cmd_parser():
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to False.")
-    parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation", "std_norm_pad_crop", "pad_crop", "random_translation", None],
-                        help="Which data augmentation to apply to the dataset, defaults to None.")
+    parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation",
+                        "std_norm_pad_crop", "pad_crop", "random_translation", None], help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
                         help='random seed (default: numpy.random.randint(10000) )')
     parser.add_argument('--date_time', type=str, dest='date_time',
@@ -186,6 +190,14 @@ def main():
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10()
         print('Using keras augmentation.')
         datagen = get_datagenerator(x=x_train)
+    else:
+        print("No preprocessing.")
+        (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
+            load_cifar10(
+            featurewise_std_normalization=False,  # False here for no mean_std_norm
+            validation_split=args.validation_split,
+            seed=args.seed,
+            do_pad_and_crop=False)
 
     # Set random seed
     # Set the seed again for model's fitting
@@ -234,7 +246,7 @@ def main():
                 f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
             x = pad_and_crop(input_)
         elif data_augmentation == "random_translation":
-            x = tf.keras.layers.RandomTranslation(
+            x = RandomTranslation(
                 height_factor=(-0.125, 0.125),
                 width_factor=(-0.125, 0.125),
                 fill_mode='nearest',
@@ -242,7 +254,7 @@ def main():
                 # seed=None,
                 fill_value=0.0
             )(input_)
-            x = tf.keras.layers.RandomFlip("horizontal")(x)
+            x = RandomFlip("horizontal")(x)
         else:
             x = input_
         x = model_core(x)
