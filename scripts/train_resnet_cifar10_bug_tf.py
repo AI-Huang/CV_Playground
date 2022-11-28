@@ -160,6 +160,7 @@ def main():
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
             seed=args.seed)
+    # [Bug]here, do_pad_and_crop_once=True for all data_augmentation ends with "_pad_crop"
     elif data_augmentation == "subtract_mean_pad_crop":
         print('subtract pixel mean, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
