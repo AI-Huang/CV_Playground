@@ -68,8 +68,10 @@ def cmd_parser():
                         action='store', default=0.2, help="""validation_split.""")
     parser.add_argument('--norm', action='store_true',
                         help="Whether to normalize the dataset, defaults to False.")
-    parser.add_argument('--data_augmentation', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation",
-                        "std_norm_pad_crop", "pad_crop", "random_translation", None], help="Which data augmentation to apply to the dataset, defaults to None.")
+    parser.add_argument('--data_preprocessing', type=str, default=None, choices=["subtract_pixel_mean", "subtract_mean_pad_crop", "keras_augmentation",
+                        "std_norm_pad_crop", None], help="Which data preprocessing to apply to the dataset, defaults to None.")
+    parser.add_argument('--data_augmentation', type=str, default=None, choices=[
+                        "pad_crop", "random_translation", None], help="Which data augmentation to apply to the dataset, defaults to None.")
     parser.add_argument('--seed', type=int, default=np.random.randint(10000), metavar='S',
                         help='random seed (default: numpy.random.randint(10000) )')
     parser.add_argument('--date_time', type=str, dest='date_time',
@@ -146,51 +148,36 @@ def main():
                               to_categorical=True,
                               data_augmentation=False)
 
+    data_preprocessing = args.data_preprocessing
     data_augmentation = args.data_augmentation
-    if data_augmentation is None:
-        print('Not using data augmentation.')
-        (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
-            load_cifar10(
-            validation_split=args.validation_split,
-            seed=args.seed)
-    elif data_augmentation == "subtract_pixel_mean":
+    if data_preprocessing == "subtract_pixel_mean":
         print('subtract pixel mean.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
             load_cifar10(
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
             seed=args.seed)
-    elif data_augmentation == "subtract_mean_pad_crop":
+    elif data_preprocessing == "subtract_mean_pad_crop":
         print('subtract pixel mean, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
             load_cifar10(
             subtract_pixel_mean=True,
             validation_split=args.validation_split,
-            seed=args.seed,
-            do_pad_and_crop_once=True)
-    elif data_augmentation == "std_norm_pad_crop":
+            seed=args.seed)
+    elif data_preprocessing == "std_norm_pad_crop":
         print('Mean and standard deviation normalisation, and pad and crop.')
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
             load_cifar10(
             featurewise_std_normalization=True,
             validation_split=args.validation_split,
-            seed=args.seed,
-            do_pad_and_crop_once=True)
-    elif data_augmentation == "pad_crop":
-        print("Pad and crop, no mean and standard deviation normalisation.")
-        (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
-            load_cifar10(
-            featurewise_std_normalization=False,  # False here for no mean_std_norm
-            validation_split=args.validation_split,
-            seed=args.seed,
-            do_pad_and_crop_once=True)
-    elif data_augmentation == "keras_augmentation":
+            seed=args.seed)
+    elif data_preprocessing == "keras_augmentation":
         # Load the CIFAR10 data.
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_cifar10()
         print('Using keras augmentation.')
         datagen = get_datagenerator(x=x_train)
     else:
-        print("No preprocessing.")
+        print("No preprocessing such as mean and standard deviation normalisation.")
         (x_train, y_train), (x_val, y_val), (x_test, y_test) = \
             load_cifar10(
             featurewise_std_normalization=False,  # False here for no mean_std_norm
@@ -237,12 +224,13 @@ def main():
         args.depth = depth
         model_core = create_model_cifar10(
             input_shape=input_shape, depth=args.depth, se_net=args.se_net, version=args.version)
+
         input_ = tf.keras.layers.Input(input_shape, dtype=tf.float32)
-        if data_augmentation == "subtract_mean_pad_crop" or data_augmentation == "std_norm_pad_crop" or data_augmentation == "pad_crop":
+        if data_augmentation == "pad_crop":
             # Augmentation operations
             print(
                 f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
-            x = pad_and_crop(input_)
+            x = pad_and_crop(input_)  # padding zeros
         elif data_augmentation == "random_translation":
             print(
                 f"data_augmentation: {data_augmentation}. Add RandomTranslation layer.")
@@ -257,6 +245,7 @@ def main():
             x = RandomFlip("horizontal")(x)
         else:
             x = input_
+
         x = model_core(x)
         model = tf.keras.Model(inputs=[input_], outputs=[x])
         # Model name, depth and version
