@@ -108,7 +108,8 @@ def create_model(model_name, **kwargs):
     return model
 
 
-def create_model_cifar10(input_shape, depth, se_net=False, version=1):
+def create_model_cifar10(depth, se_net=False, version=1):
+    input_shape = [32, 32, 3]
     if version == 2:
         model = resnet_v2(input_shape=input_shape, depth=depth)
     else:

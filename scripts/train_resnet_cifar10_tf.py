@@ -83,6 +83,8 @@ def cmd_parser():
                         action='store', default=None, help="""Custom date_time.""")
     parser.add_argument('--run', type=int, dest='run',
                         action='store', default=None, help="""No. of running.""")
+    parser.add_argument('--gpu', type=int, dest='gpu',
+                        action='store', default=0, help='gpu, the number of the gpu used for experiment.')
 
     # Optimization parameters
     parser.add_argument('--epochs', type=int, dest='epochs',
@@ -143,6 +145,7 @@ def main():
             model_name = "AttentionLeNet5_Official"
 
     # Prepare data
+    """
     cifar10_sequence_train, cifar10_sequence_val, cifar10_sequence_test = \
         load_cifar10_sequence(batch_size=batch_size,
                               shuffle=True,
@@ -152,6 +155,7 @@ def main():
                               validation_split=args.validation_split,
                               to_categorical=True,
                               data_augmentation=False)
+    """
 
     data_preprocessing = args.data_preprocessing
     data_augmentation = args.data_augmentation
@@ -199,69 +203,69 @@ def main():
         np.random.seed(args.seed)
         tf.random.set_seed(args.seed)
 
-    # Setup model
-    batch_x, batch_y = cifar10_sequence_train[0]
-    input_shape = batch_x.shape[1:]  # Input image dimensions.
-    if args.dataset == "mnist":
-        if args.model_name not in available_models:
-            raise ValueError(
-                f"""args.model_name {args.model_name} NOT in {available_models}""")
-        # Preprocessing and choose optimizer for ResNet18
-        if model_name in resnet_family:
-            model_core = create_model(
-                model_name, input_shape=input_shape, num_classes=args.num_classes)
-            input_ = tf.keras.layers.Input(input_shape, dtype=tf.uint8)
-            x = tf.cast(input_, tf.float32)
-            # padding 28x28 to 32x32
-            x = tf.pad(x, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]])
+    device = "/device:GPU:" + str(args.gpu)
+    with tf.device(device):
+        if args.dataset == "mnist":
+            input_shape = [32, 32, 1]
+            if args.model_name not in available_models:
+                raise ValueError(
+                    f"""args.model_name {args.model_name} NOT in {available_models}""")
+            # Preprocessing and choose optimizer for ResNet18
+            if model_name in resnet_family:
+                model_core = create_model(
+                    model_name, input_shape=input_shape, num_classes=args.num_classes)
+                input_ = tf.keras.layers.Input(input_shape, dtype=tf.uint8)
+                x = tf.cast(input_, tf.float32)
+                # padding 28x28 to 32x32
+                x = tf.pad(x, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]])
+                x = model_core(x)
+                model = tf.keras.Model(inputs=[input_], outputs=[x])
+        elif args.dataset == "cifar10":
+            # Model version
+            # Orig paper: version = 1 (ResNet v1), Improved ResNet: version = 2 (ResNet v2)
+            version = 1
+            n = args.n
+            # Computed depth from supplied model parameter n
+            if version == 1:
+                depth = n * 6 + 2
+            elif version == 2:
+                depth = n * 9 + 2
+            args.depth = depth
+            model_core = create_model_cifar10(
+                depth=args.depth, se_net=args.se_net, version=args.version)
+
+            input_ = tf.keras.layers.Input([32, 32, 3], dtype=tf.float32)
+            if data_augmentation == "pad_crop":
+                # Augmentation operations
+                print(
+                    f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
+                x = pad_and_crop(input_)  # padding zeros
+            elif data_augmentation == "random_translation":
+                print(
+                    f"data_augmentation: {data_augmentation}. Add RandomTranslation layer.")
+                x = RandomTranslation(
+                    height_factor=(-0.125, 0.125),
+                    width_factor=(-0.125, 0.125),
+                    fill_mode='nearest',
+                    interpolation='bilinear',
+                    # seed=None,
+                    fill_value=0.0
+                )(input_)
+                x = RandomFlip("horizontal")(x)
+            else:
+                x = input_
+
             x = model_core(x)
             model = tf.keras.Model(inputs=[input_], outputs=[x])
-    elif args.dataset == "cifar10":
-        # Model version
-        # Orig paper: version = 1 (ResNet v1), Improved ResNet: version = 2 (ResNet v2)
-        version = 1
-        n = args.n
-        # Computed depth from supplied model parameter n
-        if version == 1:
-            depth = n * 6 + 2
-        elif version == 2:
-            depth = n * 9 + 2
-        args.depth = depth
-        model_core = create_model_cifar10(
-            input_shape=input_shape, depth=args.depth, se_net=args.se_net, version=args.version)
-
-        input_ = tf.keras.layers.Input(input_shape, dtype=tf.float32)
-        if data_augmentation == "pad_crop":
-            # Augmentation operations
-            print(
-                f"data_augmentation: {data_augmentation}. Add pad_and_crop layer.")
-            x = pad_and_crop(input_)  # padding zeros
-        elif data_augmentation == "random_translation":
-            print(
-                f"data_augmentation: {data_augmentation}. Add RandomTranslation layer.")
-            x = RandomTranslation(
-                height_factor=(-0.125, 0.125),
-                width_factor=(-0.125, 0.125),
-                fill_mode='nearest',
-                interpolation='bilinear',
-                # seed=None,
-                fill_value=0.0
-            )(input_)
-            x = RandomFlip("horizontal")(x)
+            # Model name, depth and version
+            model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
+            # SENet
+            if args.se_net:
+                model_name = "SE-" + model_name
         else:
-            x = input_
-
-        x = model_core(x)
-        model = tf.keras.Model(inputs=[input_], outputs=[x])
-        # Model name, depth and version
-        model_name = 'ResNet%dv%d_CIFAR10' % (depth, version)
-        # SENet
-        if args.se_net:
-            model_name = "SE-" + model_name
-    else:
-        model = create_model(
-            model_name, input_shape=input_shape, num_classes=args.num_classes)
-    args.model_name = model_name
+            model = create_model(
+                model_name, input_shape=input_shape, num_classes=args.num_classes)
+        args.model_name = model_name
 
     # Config paths
     if args.date_time is None:
@@ -295,9 +299,10 @@ def main():
     metrics = [BinaryAccuracy(name="binary_accuracy"),
                CategoricalAccuracy(name="categorical_accuracy")]
 
-    model.compile(loss=loss,
-                  optimizer=optimizer,
-                  metrics=metrics)
+    with tf.device(device):
+        model.compile(loss=loss,
+                      optimizer=optimizer,
+                      metrics=metrics)
 
     # Define callbacks
     csv_logger = CSVLogger(os.path.join(
@@ -328,20 +333,21 @@ def main():
     #     callbacks=callbacks
     # )
 
-    if data_augmentation == "keras_augmentation":
-        # Fit the model on the batches generated by datagen.flow().
-        model.fit_generator(datagen.flow
-                            (x_train, y_train, batch_size=batch_size),
-                            validation_data=(x_test, y_test),
-                            epochs=epochs, verbose=1, workers=4,
-                            callbacks=callbacks)
-    else:
-        model.fit(x_train, y_train,
-                  batch_size=batch_size,
-                  epochs=epochs,
-                  validation_data=(x_test, y_test),
-                  shuffle=True,
-                  callbacks=callbacks)
+    with tf.device(device):
+        if data_augmentation == "keras_augmentation":
+            # Fit the model on the batches generated by datagen.flow().
+            model.fit_generator(datagen.flow
+                                (x_train, y_train, batch_size=batch_size),
+                                validation_data=(x_test, y_test),
+                                epochs=epochs, verbose=1, workers=4,
+                                callbacks=callbacks)
+        else:
+            model.fit(x_train, y_train,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      validation_data=(x_test, y_test),
+                      shuffle=True,
+                      callbacks=callbacks)
 
 
 if __name__ == "__main__":
