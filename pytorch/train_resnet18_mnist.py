@@ -116,13 +116,14 @@ def main():
 
     # choose model: resnet18
     resnet18 = models.resnet18(pretrained=True)
-    num_ftrs = resnet18.fc.in_features
+    num_filters = resnet18.fc.in_features
     # Here the size of each output sample is set to 2.
-    # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-    resnet18.fc = nn.Linear(num_ftrs, 2)
-    # modified for MNIST
-    resnet18.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(
-        7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+    # Alternatively, it can be generalized to nn.Linear(num_filters, len(class_names)).
+    num_classes = 2
+    resnet18.fc = nn.Linear(num_filters, num_classes)
+    # Modified for MNIST, for MNIST images are single-channel
+    resnet18.conv1 = torch.nn.Conv2d(
+        1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     resnet18 = resnet18.to(device)
 
     optimizer = optim.Adadelta(resnet18.parameters(), lr=args.lr)
